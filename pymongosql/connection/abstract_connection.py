@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-This file contain AbstractConnection class.
+This file contains AbstractConnection class.
 """
 from abc import ABCMeta, abstractmethod
 

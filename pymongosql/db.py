@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-This file contain DB class.
+This file contains DB class.
 """
 
 from .collection import Collection
@@ -10,17 +10,19 @@ class DB(object):
     Serialize MySQL requests.
     """
 
-    def __init__(self, serializer, connection):
+    def __init__(self, api_serializer, sql_serializer, connection):
         """
         Args:
-            serializer (object): The serializer to translate to SQL requests.
+            api_serializer (object): The serializer from api to neutral language.
+            sql_serializer (object): The serializer from neutral language to SQL.
             connection (object): The object which interacts with Database.
         """
-        self._serializer = serializer
+        self._api_serialize = api_serializer
+        self._sql_serializer = sql_serializer
         self._connection = connection
         self.discover_tables()
 
     def discover_tables(self):
-        result, _ = self._connection.execute(*self._serializer.get_tables())
+        result, _ = self._connection.execute(*self._sql_serializer.get_tables())
         for table in result:
-            setattr(self, table[0], Collection(self._serializer, self._connection))
+            setattr(self, table[0], Collection(self._api_serialize, self._sql_serializer, self._connection, table[0]))

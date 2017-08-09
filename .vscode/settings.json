@@ -1,6 +1,10 @@
 {
     "python.pythonPath": "${workspaceRoot}/venv/bin/python2.7",
     "files.exclude": {
-        "**/*.pyc": true
-    }
+        "**/*.pyc": true,
+        "**/__pycache__": true
+    },
+    "python.linting.pylintArgs": [
+        "--ignored-classes=DB"
+    ]
 }
