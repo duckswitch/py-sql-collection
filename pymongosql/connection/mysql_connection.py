@@ -17,15 +17,16 @@ class MySQLConnection(AbstractConnection):
         Returns
             (object): The DB Connection.
         """
-        return MySQLdb.connect(
+        self.sql_connection = MySQLdb.connect(
             host=self._host,
             user=self._user,
             passwd=self._password,
             db=self._database,
             charset=u"utf8"
         )
+        self.sql_cursor = None
 
-    def execute(self, query, values):
+    def execute(self, conn, query, values):
         """
         Execute a query.
         Args:
@@ -35,15 +36,9 @@ class MySQLConnection(AbstractConnection):
             (list, list): Tuple of two : resulting items & result set description.
         """
         # Open connection
-        conn = self.connect()
-        cursor = conn.cursor()
+        self.sql_connection = self.connect()
+        self.sql_cursor = self.sql_connection.cursor()
 
         # Execute query
-        cursor.execute(query, values)
-        result = cursor.fetchall(), cursor.description
-
-        # Commit, close & return.
-        cursor.connection.commit()
-        cursor.close()
-        conn.close()
-        return result
+        self.sql_cursor.execute(query, values)
+        return  self.sql_cursor

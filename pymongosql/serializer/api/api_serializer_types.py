@@ -46,7 +46,19 @@ class Operator(ApiLanguageObject):
         Args:
             value: The value of the object.
         """
-        if value not in [u"=", u"!=", u">", u">=", u"<=", u"and"]:
+        if value not in [u"=", u"!=", u">", u">=", u"<=", u"and", u"or"]:
             raise ValueError(u"Unknown operator '{}'.".format(value))
 
         ApiLanguageObject.__init__(self, value=value)
+
+class Limit(ApiLanguageObject):
+    """
+    A field.
+    """
+    pass
+
+class Offset(ApiLanguageObject):
+    """
+    A field.
+    """
+    pass

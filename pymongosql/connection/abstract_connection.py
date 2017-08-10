@@ -22,6 +22,8 @@ class AbstractConnection(object):
         self._user = user
         self._password = password
         self._database = database
+        self.sql_connection = None
+        self.sql_cursor = None
 
     @abstractmethod
     def connect(self):

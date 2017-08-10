@@ -3,6 +3,7 @@
 This file contains Collection class.
 """
 
+from .cursor import Cursor
 
 class Collection(object):
     """
@@ -22,6 +23,9 @@ class Collection(object):
         self._connection = connection
         self.table = table
         self._columns = None
+
+    def create_cursor(self, operation, statements):
+        return Cursor(self._sql_serializer, self._connection, self.table, operation, statements)
 
     @property
     def columns(self):
@@ -45,5 +49,6 @@ class Collection(object):
                 in the matching documents.
         """
         decoded_query = self._api_serializer.decode_query(query)
-        sql_query, values = self._sql_serializer.query(table=self.table, query=decoded_query)
-        return self._connection.execute(sql_query, values)
+        return self.create_cursor(operation=u"find", statements=decoded_query)
+        # sql_query, values = self._sql_serializer.query(table=self.table, query=decoded_query)
+        # return self._connection.execute(sql_query, values)
