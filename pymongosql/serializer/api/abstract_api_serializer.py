@@ -4,6 +4,7 @@ This file contains AbstractSerializer class.
 """
 from abc import ABCMeta, abstractmethod
 
+
 class AbstractApiSerializer(object):
     """
     Defines how an API serializer should work.

@@ -4,7 +4,7 @@ Various Class and types to describe requests API
 """
 
 
-class ApiLanguageObject():
+class ApiLanguageObject(object):
     """
     Describe an API object.
     """
@@ -28,14 +28,25 @@ class Value(ApiLanguageObject):
     """
     pass
 
+
 class Field(ApiLanguageObject):
     """
     A field.
     """
     pass
 
+
 class Operator(ApiLanguageObject):
     """
     An operator.
     """
-    pass
+
+    def __init__(self, value):
+        """
+        Args:
+            value: The value of the object.
+        """
+        if value not in [u"=", u"!=", u">", u">=", u"<=", u"and"]:
+            raise ValueError(u"Unknown operator '{}'.".format(value))
+
+        ApiLanguageObject.__init__(self, value=value)

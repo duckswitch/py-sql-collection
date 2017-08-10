@@ -9,10 +9,21 @@ from pymongosql.serializer.api.api_serializer_types import (
     Operator
 )
 
+
 class MongodbSerializer(AbstractApiSerializer):
     """
     Defines the MongoDB Api serializer.
     """
+
+    def __init__(self):
+        self._OPERATORS = {
+            u"$eq": u"=",
+            u"$ne": u"!=",
+            u"$gt": u">",
+            u"$gte": u">=",
+            u"$lt": u"<",
+            u"$lte": u"<="
+        }
 
     def decode_query(self, filters, parent=None):
         """
@@ -31,6 +42,11 @@ class MongodbSerializer(AbstractApiSerializer):
 
         for filt in filters:
             for key, value in filt.items():
-                translated += [Field(key), Operator(u"="), Value(value)]
+                if key in self._OPERATORS and parent is not None:
+                    translated += [Field(parent), Operator(self._OPERATORS[key]), Value(value)]
+                elif isinstance(value, dict):
+                    translated += self.decode_query(filters=value, parent=key)
+                else:
+                    translated += [Field(key), Operator(u"="), Value(value)]
 
         return translated
