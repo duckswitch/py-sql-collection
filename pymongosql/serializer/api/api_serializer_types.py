@@ -3,16 +3,15 @@
 Various Class and types to describe requests API
 """
 
+# Statement = Set of word with make a request.
 
-class ApiLanguageObject(object):
-    """
-    Describe an API object.
-    """
+
+class Statement(object):
+    pass
+
+
+class StatementExpression(object):
     def __init__(self, value):
-        """
-        Args:
-            value: The value of the object.
-        """
         self.value = value
 
     def __str__(self):
@@ -22,21 +21,38 @@ class ApiLanguageObject(object):
         return u"{}({})".format(self.__class__.__name__, self.value)
 
 
-class Value(ApiLanguageObject):
-    """
-    A parameter given by user.
-    """
+class SelectStatement(Statement):
+    def __init__(self):
+        self.table = None
+        self.where = []
+        self.limit = None
+        self.offset = None
+        self.sorts = []
+
+
+class Limit(StatementExpression):
     pass
 
 
-class Field(ApiLanguageObject):
-    """
-    A field.
-    """
+
+
+class Offset(StatementExpression):
     pass
 
 
-class Operator(ApiLanguageObject):
+class Value(StatementExpression):
+    pass
+
+
+class Field(StatementExpression):
+    pass
+
+
+class Table(StatementExpression):
+    pass
+
+
+class Operator(StatementExpression):
     """
     An operator.
     """
@@ -49,16 +65,17 @@ class Operator(ApiLanguageObject):
         if value not in [u"=", u"!=", u">", u">=", u"<=", u"and", u"or"]:
             raise ValueError(u"Unknown operator '{}'.".format(value))
 
-        ApiLanguageObject.__init__(self, value=value)
+        StatementExpression.__init__(self, value=value)
 
-class Limit(ApiLanguageObject):
-    """
-    A field.
-    """
-    pass
 
-class Offset(ApiLanguageObject):
-    """
-    A field.
-    """
-    pass
+class Sort(StatementExpression):
+    def __init__(self, field, direction):
+        """
+        Args:
+            value: The value of the object.
+        """
+        if direction not in [1, -1]:
+            raise ValueError(u"Unknown sort '{}'.".format(direction))
+
+        StatementExpression.__init__(self, value=[field, direction])
+

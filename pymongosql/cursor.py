@@ -4,21 +4,20 @@ This file contains Cursor class
 """
 
 from serializer.api.api_serializer_types import Limit, Offset
-
+from serializer.api.api_serializer_types import SelectStatement
 
 class Cursor(object):
     """
     Handle interactions with result set from DB.
     """
 
-    def __init__(self, sql_serializer, connection, table, operation, statements):
-        self._table = table
+    def __init__(self, sql_serializer, api_serializer, connection, statement):
         self._sql_serializer = sql_serializer
-        self.chain = [operation]
-        self.statements = [statements]
+        self._api_serializer = api_serializer
+        self.statement = statement
         self._connection = connection
-        self._sql_cursor = None
-        self._batch_size = 20
+        self._executed = False
+        self._items = []
 
     def limit(self, limit):
         """
@@ -26,16 +25,41 @@ class Cursor(object):
         Args:
             limit (int): Max number of result.
         """
-        self.statements.append([Limit(limit)])
-        self.chain.append(u"limit")
+        if isinstance(self.statement, SelectStatement):
+            self.statement = self._api_serializer.decode_limit(self.statement, limit)
+
         return self
 
+    def sort(self, key_or_list, direction=None):
+        if isinstance(self.statement, SelectStatement):
+            self.statement = self._api_serializer.decode_sort(self.statement, key_or_list, direction)
+        return self
+
+    def skip(self, skip):
+        """
+        Skip items.
+        Args:
+            limit (int): Max number of result.
+        """
+        if isinstance(self.statement, SelectStatement):
+            self.statement = self._api_serializer.decode_skip(self.statement, skip)
+
+        return self
+
+    def get_(self, operation):
+        try:
+            index = self.chain.index(operation)
+        except ValueError:
+            return None
+
     def serialize(self):
-        for index, operation in enumerate(self.chain):
-            if operation == u"find":
-                query, values = self._sql_serializer.query(table=self._table, query=self.statements[index])
-                self._sql_cursor = self._connection.execute(query, values)
-    
+        if isinstance(self.statement, SelectStatement):
+            query, values = self._sql_serializer.query(self.statement)
+            rows, description = self._connection.execute(query, values)
+            self._items = [self.to_json(row, description) for row in rows]
+
+        self._executed = True
+
     def to_json(self, row, description):
         output = {}
         for index, value in enumerate(row):
@@ -48,13 +72,8 @@ class Cursor(object):
         self._batch_size = batch_size
 
     def __iter__(self):
-        if not self._sql_cursor:
+        if not self._executed:
             self.serialize()
 
-        first = True
-        fetched = []
-        while first or len(fetched) > 0:
-            fetched = self._sql_cursor.fetchmany(self._batch_size)
-            for item in fetched:
-                yield self.to_json(item, self._sql_cursor.description)
-            first = False
+        for item in self._items:
+            yield item

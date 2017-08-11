@@ -5,6 +5,7 @@ This file contains DB class.
 
 from .collection import Collection
 
+
 class DB(object):
     """
     Serialize MySQL requests.
@@ -23,9 +24,8 @@ class DB(object):
         self.discover_tables()
 
     def discover_tables(self):
-        cursor = self._connection.execute(*self._sql_serializer.get_tables())
+        tables, _ = self._connection.execute(*self._sql_serializer.get_tables())
         
-        for table in cursor:
+        for table in tables:
             setattr(self, table[0], Collection(self._api_serialize, self._sql_serializer, self._connection, table[0]))
 
-        cursor.close()

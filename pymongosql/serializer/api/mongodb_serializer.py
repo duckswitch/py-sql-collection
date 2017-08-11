@@ -6,7 +6,12 @@ from .abstract_api_serializer import AbstractApiSerializer
 from pymongosql.serializer.api.api_serializer_types import (
     Value,
     Field,
-    Operator
+    Operator,
+    SelectStatement,
+    Limit,
+    Table,
+    Offset,
+    Sort
 )
 
 
@@ -25,7 +30,30 @@ class MongodbSerializer(AbstractApiSerializer):
             u"$lte": u"<="
         }
 
-    def decode_query(self, filters, parent=None):
+    def decode_limit(self, statement, limit):
+        statement.limit = Limit(limit)
+        return statement
+
+
+    def decode_sort(self, statement, key_or_list, direction=None):
+        if direction is not None:
+            statement.sorts = [Sort(key_or_list, direction)]
+        else:
+            statement.sorts = [Sort(*tple) for tple in key_or_list]
+
+        return statement
+
+    def decode_skip(self, statement, skip):
+        statement.offset = Offset(skip)
+        return statement
+
+    def decode_query(self, collection, filters):
+        select_statement = SelectStatement()
+        select_statement.table = Table(collection)
+        select_statement.where = self.decode_where(filters)
+        return select_statement
+
+    def decode_where(self, filters, parent=None):
         """
         Parse a filter from the API.
         Args:
@@ -45,7 +73,7 @@ class MongodbSerializer(AbstractApiSerializer):
                 if key in self._OPERATORS and parent is not None:
                     translated += [Field(parent), Operator(self._OPERATORS[key]), Value(value)]
                 elif isinstance(value, dict):
-                    translated += self.decode_query(filters=value, parent=key)
+                    translated += self.decode_where(filters=value, parent=key)
                 else:
                     translated += [Field(key), Operator(u"="), Value(value)]
 

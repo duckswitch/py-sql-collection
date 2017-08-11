@@ -16,23 +16,40 @@ class MySQLSerializer(AbstractSQLSerializer):
     Serialize MySQL requests.
     """
 
-    def query(self, table, query=None):
-        query = query or []
+    def query(self, statement):
         where_stmt = []
         where_values = []
-        for item in query:
+        for item in statement.where:
             if isinstance(item, Value):
                 where_stmt.append(u"%s")
                 where_values.append(item.value)
             else:
                 where_stmt.append(item.value)
 
-        returned = [u"SELECT * FROM {}".format(table)]
+        values = where_values
+        returned = [u"SELECT * FROM {}".format(statement.table.value)]
         
         if len(where_stmt) > 0:
             returned += [u"WHERE"] + where_stmt
 
-        return u" ".join(returned), where_values
+        if statement.sorts:
+            binding = {
+                1: u"ASC",
+                -1: u"DESC"
+            }
+
+            sort_stmt = [ u"{} {}".format(sort.value[0], binding[sort.value[1]]) for sort in statement.sorts]
+            returned.append(u"ORDER BY {}".format(u", ".join(sort_stmt)))
+
+        if statement.limit is not None:
+            returned.append(u"LIMIT %s")
+            values.append(statement.limit.value)
+
+            if statement.offset is not None:
+                returned.append(u"OFFSET %s")
+                values.append(statement.offset.value)
+
+        return u" ".join(returned), values
 
     def get_tables(self):
         """
@@ -40,7 +57,15 @@ class MySQLSerializer(AbstractSQLSerializer):
         Returns:
             (unicode, list): A query and values to inject in it.
         """
-        return "SHOW TABLES", []
+        return u"SHOW TABLES", []
+
+    def get_databases(self):
+        """
+        Query to get all tables from the database.
+        Returns:
+            (unicode, list): A query and values to inject in it.
+        """
+        return u"SHOW DATABASES", []
 
     def get_table_columns(self, table):
         """

@@ -24,8 +24,8 @@ class Collection(object):
         self.table = table
         self._columns = None
 
-    def create_cursor(self, operation, statements):
-        return Cursor(self._sql_serializer, self._connection, self.table, operation, statements)
+    def create_cursor(self, statement):
+        return Cursor(self._sql_serializer, self._api_serializer, self._connection, statement)
 
     @property
     def columns(self):
@@ -48,7 +48,7 @@ class Collection(object):
             projection (dict): The projection parameter determines which fields are returned
                 in the matching documents.
         """
-        decoded_query = self._api_serializer.decode_query(query)
-        return self.create_cursor(operation=u"find", statements=decoded_query)
+        statement = self._api_serializer.decode_query(self.table, query)
+        return self.create_cursor(statement)
         # sql_query, values = self._sql_serializer.query(table=self.table, query=decoded_query)
         # return self._connection.execute(sql_query, values)

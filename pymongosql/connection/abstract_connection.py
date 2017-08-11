@@ -14,16 +14,14 @@ class AbstractConnection(object):
             self,
             user,
             password,
-            database,
-            host
+            host,
+            database=None,
     ):
 
         self._host = host
         self._user = user
         self._password = password
         self._database = database
-        self.sql_connection = None
-        self.sql_cursor = None
 
     @abstractmethod
     def connect(self):
