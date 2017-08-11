@@ -16,14 +16,14 @@ class AbstractApiSerializer(object):
         pass
 
     @abstractmethod
-    def decode_query(self, collection, filters):
+    def decode_query(self, collection, filters, projection, columns):
         """
         Parse a filters from the API.
         """
         pass
 
     @abstractmethod
-    def decode_where(self, filters, parent=None):
+    def decode_where(self, filters, columns, parent=None):
         """
         Parse a filters from the API.
         """

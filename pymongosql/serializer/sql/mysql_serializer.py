@@ -6,10 +6,9 @@ This file contains MySQLSerializer class.
 from .abstract_sql_serializer import AbstractSQLSerializer
 from ..api.api_serializer_types import (
     Value,
-    Field,
     Operator
 )
-from ...column import Column
+from pymongosql.serializer.api.api_serializer_types import Column
 
 class MySQLSerializer(AbstractSQLSerializer):
     """
@@ -23,11 +22,18 @@ class MySQLSerializer(AbstractSQLSerializer):
             if isinstance(item, Value):
                 where_stmt.append(u"%s")
                 where_values.append(item.value)
+            elif isinstance(item, Column):
+                where_stmt.append(item.name)
             else:
                 where_stmt.append(item.value)
 
+
         values = where_values
-        returned = [u"SELECT * FROM {}".format(statement.table.value)]
+        fields_statements = [u"*"]
+        if len(statement.fields) > 0:
+            fields_statements = [column.name for column in statement.fields]
+
+        returned = [u"SELECT {} FROM {}".format(u", ".join(fields_statements), statement.table.value)]
         
         if len(where_stmt) > 0:
             returned += [u"WHERE"] + where_stmt
@@ -49,6 +55,7 @@ class MySQLSerializer(AbstractSQLSerializer):
                 returned.append(u"OFFSET %s")
                 values.append(statement.offset.value)
 
+        print(" ".join(returned))
         return u" ".join(returned), values
 
     def get_tables(self):

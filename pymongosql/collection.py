@@ -13,9 +13,9 @@ class Collection(object):
     def __init__(self, api_serializer, sql_serializer, connection, table):
         """
         Args:
-            api_serializer (object): The serializer from api to neutral language.
-            sql_serializer (object): The serializer to translate to SQL requests.
-            connection (object): The object which interacts with Database.
+            api_serializer : The serializer from api to neutral language.
+            sql_serializer : The serializer to translate to SQL requests.
+            connection : The object which interacts with Database.
             table (unicode): The name of the table associated.
         """
         self._api_serializer = api_serializer
@@ -40,7 +40,7 @@ class Collection(object):
             ]
         return self._columns
 
-    def find(self, query, projection=None):
+    def find(self, query=None, projection=None):
         """
         Do a find query on the collection.
         Args:
@@ -48,7 +48,7 @@ class Collection(object):
             projection (dict): The projection parameter determines which fields are returned
                 in the matching documents.
         """
-        statement = self._api_serializer.decode_query(self.table, query)
+        statement = self._api_serializer.decode_query(self.table, query, projection, self.columns)
         return self.create_cursor(statement)
         # sql_query, values = self._sql_serializer.query(table=self.table, query=decoded_query)
         # return self._connection.execute(sql_query, values)
