@@ -76,7 +76,7 @@ class MongodbSerializer(AbstractApiSerializer):
             statement.fields.fields = columns
         return statement
 
-    def decode_query(self, collection, filters, projection, columns):
+    def decode_query(self, collection, columns, filters=None, projection=None):
         select_statement = SelectStatement()
         select_statement = self.decode_projection(select_statement, projection, columns)
         select_statement.table = Table(collection)

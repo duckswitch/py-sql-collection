@@ -48,7 +48,7 @@ class Collection(object):
             projection (dict): The projection parameter determines which fields are returned
                 in the matching documents.
         """
-        statement = self._api_serializer.decode_query(self.table, query, projection, self.columns)
+        statement = self._api_serializer.decode_query(self.table, self.columns, query, projection)
         return self.create_cursor(statement)
         # sql_query, values = self._sql_serializer.query(table=self.table, query=decoded_query)
         # return self._connection.execute(sql_query, values)

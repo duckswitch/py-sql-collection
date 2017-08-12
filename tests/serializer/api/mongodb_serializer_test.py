@@ -7,10 +7,39 @@ from pytest import fixture
 from pymongosql.serializer.api.mongodb_serializer import MongodbSerializer
 from pymongosql.serializer.api.api_serializer_types import (
     Value,
-    Field,
+    Column,
     Operator
 )
 
+@fixture(scope=u"function")
+def columns():
+    return [
+        Column(
+            name=u"id",
+            typ=u"number",
+            required=True,
+            key=u"",
+            default=None,
+            extra=u""
+
+        ),
+        Column(
+            name=u"name",
+            typ=u"string",
+            required=True,
+            key=u"",
+            default=None,
+            extra=u""
+        ),
+        Column(
+            name=u"hours",
+            typ=u"number",
+            required=False,
+            key=u"",
+            default=None,
+            extra=u""
+        )
+    ]
 
 @fixture(scope=u"function")
 def mongodb_serializer():
@@ -20,42 +49,45 @@ def mongodb_serializer():
     return MongodbSerializer()
 
 
-def test_decode_query_basic(mongodb_serializer):
+def test_decode_where_basic(mongodb_serializer, columns):
     """
     Test if filters are working.
     """
-    where = mongodb_serializer.decode_query({
+
+    where = mongodb_serializer.decode_where({
         u"name": u"kevin"
-    })
+    }, columns)
+    assert isinstance(where[0], Column)
+    assert where[0].name == u"name"
+    assert isinstance(where[1], Operator)
+    assert where[1].value == u"="
+    assert isinstance(where[2], Value)
+    assert where[2].value == u"kevin"
 
-    for index, to_check in enumerate([
-            (Field, u"name"), (Operator, u"=", (Value, u"kevin"))
-        ]):
-
-        assert isinstance(where[index], to_check[0])
-        assert where[index].value == to_check[1]
-
-
-def test_decode_query_with_operators(mongodb_serializer):
+def test_decode_where_with_operators(mongodb_serializer, columns):
     """
     Test if filters are working.
     """
-    where = mongodb_serializer.decode_query({
+    where = mongodb_serializer.decode_where({
         u"hours": {
             u"$gt": 5,
             u"$lte": 6
         }
-    })
+    }, columns)
 
-    check_list = [
-        (Field, u"hours"),
-        (Operator, u"<="),
-        (Value, 6),
-        (Field, u"hours"),
-        (Operator, u">"),
-        (Value, 5)
-    ]
-    for index, to_check in enumerate(check_list):
-        assert isinstance(where[index], to_check[0])
-        assert where[index].value == to_check[1]
+    assert isinstance(where[0], Column)
+    assert where[0].name == u"hours"
+    assert isinstance(where[1], Operator)
+    assert where[1].value == u"<="
+    assert isinstance(where[2], Value)
+    assert where[2].value == 6
+
+    assert isinstance(where[3], Column)
+    assert where[3].name == u"hours"
+    assert isinstance(where[4], Operator)
+    assert where[4].value == u">"
+    assert isinstance(where[5], Value)
+    assert where[5].value == 5
+
+
 
