@@ -9,17 +9,8 @@ Various Class and types to describe requests API
 class Statement(object):
     pass
 
-
 class StatementExpression(object):
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        """
-        Called when printed.
-        """
-        return u"{}({})".format(self.__class__.__name__, self.value)
-
+    pass
 
 class SelectStatement(Statement):
     def __init__(self):
@@ -29,20 +20,27 @@ class SelectStatement(Statement):
         self.limit = None
         self.offset = None
         self.sorts = []
+        self.lookup = []
 
+class Lookup(StatementExpression):
+    def __init__(self, from_collection, local_field, foreign_field, as_field):
+        self.from_collection = from_collection
+        self.local_field = local_field
+        self.foreign_field = foreign_field
+        self.as_field = as_field
 
 class Limit(StatementExpression):
-    pass
-
-
-
+    def __init__(self, value):
+        self.value = value
 
 class Offset(StatementExpression):
-    pass
+    def __init__(self, value):
+        self.value = value
 
 
 class Value(StatementExpression):
-    pass
+    def __init__(self, value):
+        self.value = value
 
 
 class Column(object):
@@ -58,9 +56,15 @@ class Column(object):
         self.default = default
         self.extra = extra
 
+class Field(object):
+
+    def __init__(self, column, alias=None):
+        self.column = column
+        self.alias = alias
 
 class Table(StatementExpression):
-    pass
+    def __init__(self, value):
+        self.value = value
 
 
 class Operator(StatementExpression):
@@ -76,8 +80,7 @@ class Operator(StatementExpression):
         if value not in [u"=", u"!=", u">", u">=", u"<=", u"and", u"or"]:
             raise ValueError(u"Unknown operator '{}'.".format(value))
 
-        StatementExpression.__init__(self, value=value)
-
+        self.value = value
 
 class Sort(StatementExpression):
     def __init__(self, field, direction):
@@ -88,5 +91,5 @@ class Sort(StatementExpression):
         if direction not in [1, -1]:
             raise ValueError(u"Unknown sort '{}'.".format(direction))
 
-        StatementExpression.__init__(self, value=[field, direction])
+        self.value =[field, direction]
 

@@ -6,7 +6,7 @@ This file contains MySQLSerializer class.
 from .abstract_sql_serializer import AbstractSQLSerializer
 from ..api.api_serializer_types import (
     Value,
-    Operator
+    Field
 )
 from pymongosql.serializer.api.api_serializer_types import Column
 
@@ -22,8 +22,8 @@ class MySQLSerializer(AbstractSQLSerializer):
             if isinstance(item, Value):
                 where_stmt.append(u"%s")
                 where_values.append(item.value)
-            elif isinstance(item, Column):
-                where_stmt.append(item.name)
+            elif isinstance(item, Field):
+                where_stmt.append(u"{}.{}".format(statement.table.value, item.column.name))
             else:
                 where_stmt.append(item.value)
 
@@ -31,10 +31,21 @@ class MySQLSerializer(AbstractSQLSerializer):
         values = where_values
         fields_statements = [u"*"]
         if len(statement.fields) > 0:
-            fields_statements = [column.name for column in statement.fields]
+            fields_statements = [u"{}.{}".format(statement.table.value, field.column.name) for field in statement.fields]
 
         returned = [u"SELECT {} FROM {}".format(u", ".join(fields_statements), statement.table.value)]
-        
+
+        if len(statement.lookup) > 0:
+            for item in statement.lookup:
+                returned.append(u"JOIN {} {} ON {}.{} = {}.{}".format(
+                    item.from_collection,
+                    item.as_field,
+                    statement.table.value,
+                    item.local_field.column.name,
+                    item.from_collection,
+                    item.foreign_field.column.name
+                ))
+
         if len(where_stmt) > 0:
             returned += [u"WHERE"] + where_stmt
 

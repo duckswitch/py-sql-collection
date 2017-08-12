@@ -5,13 +5,14 @@ This file contains AbstractSerializer class.
 from .abstract_api_serializer import AbstractApiSerializer
 from pymongosql.serializer.api.api_serializer_types import (
     Value,
-    Column,
+    Field,
     Operator,
     SelectStatement,
     Limit,
     Table,
     Offset,
-    Sort
+    Sort,
+    Lookup
 )
 
 
@@ -47,38 +48,28 @@ class MongodbSerializer(AbstractApiSerializer):
         statement.offset = Offset(skip)
         return statement
 
-    def decode_projection(self, statement, projection, columns):
+    def decode_projection(self, statement, projection):
 
         projection = projection or {}
-        columns = [column for column in columns]
-        columns_fields = [column.name for column in columns]
-        mode = None
-        for key, value in projection.items():
-            try:
-
-                index = columns_fields.index(key)
-            except ValueError:
-                pass
-            else:
-                if index is not None:
-
-                    if value != mode and mode is not None:
-                        raise ValueError(u"Projection can't use -1 and -1 at the same time.")
-
-                    mode = value
-
-                    if mode == 1:
-                        statement.fields.append(columns[index])
-                    else:
-                        del columns[index]
-
-        if mode == -1:
-            statement.fields.fields = columns
         return statement
 
-    def decode_query(self, collection, columns, filters=None, projection=None):
+    def decode_lookup(self, statement, columns, lookup_columns, lookup):
+        for item in lookup:
+            statement.lookup.append(
+                Lookup(
+                    from_collection=item[u"from"],
+                    local_field=Field(self.get_column_from_name(columns, item[u"localField"])),
+                    foreign_field=Field(self.get_column_from_name(lookup_columns[item[u"from"]], item[u"foreignField"])),
+                    as_field=item[u"as"]
+                )
+            )
+        return statement
+
+    def decode_query(self, collection, columns, filters=None, projection=None, lookup=None, lookup_columns=None):
         select_statement = SelectStatement()
-        select_statement = self.decode_projection(select_statement, projection, columns)
+        select_statement.fields = [Field(column) for column in columns]
+        select_statement = self.decode_lookup(select_statement, columns, lookup_columns, lookup)
+        select_statement = self.decode_projection(select_statement, projection)
         select_statement.table = Table(collection)
         select_statement.where = self.decode_where(filters or {}, columns)
         return select_statement
@@ -106,10 +97,10 @@ class MongodbSerializer(AbstractApiSerializer):
             for key, value in filt.items():
                 if key in self._OPERATORS and parent is not None:
 
-                    translated += [self.get_column_from_name(columns, parent), Operator(self._OPERATORS[key]), Value(value)]
+                    translated += [Field(self.get_column_from_name(columns, parent)), Operator(self._OPERATORS[key]), Value(value)]
                 elif isinstance(value, dict):
                     translated += self.decode_where(filters=value, columns=columns, parent=key)
                 else:
-                    translated += [self.get_column_from_name(columns, key), Operator(u"="), Value(value)]
+                    translated += [Field(self.get_column_from_name(columns, key)), Operator(u"="), Value(value)]
 
         return translated
