@@ -76,6 +76,21 @@ class Select(object):
         self.offset = offset or 0
 
 
+class Value(object):
+
+    def __init__(self, column, value):
+        self.column = column
+        self.value = value
+
+
+class Insert(object):
+
+    def __init__(self, fields=None, table=None, values=None):
+        self.table = table
+        self.fields = fields or []
+        self.values = values or []
+
+
 class Join(object):
 
     def __init__(self, from_table, to_table, from_field, to_field, as_alias):
@@ -106,3 +121,9 @@ class Join(object):
             self.to_field.column.name
         )
 
+
+
+class InsertResultOne(object):
+
+    def __init__(self, inserted_id):
+        self.inserted_id = inserted_id

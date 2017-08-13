@@ -5,6 +5,8 @@ This file contains Collection class.
 
 import json
 from .cursor import Cursor
+from .serializer.api_type import InsertResultOne
+
 
 class Collection(object):
     """
@@ -27,8 +29,6 @@ class Collection(object):
         self.table_name = table_name
         # Discover table config.
 
-    def create_cursor(self, statement):
-        return Cursor(self._sql_serializer, self._api_serializer, self._connection, statement)
 
     def discover_columns(self, table_name=None):
         """
@@ -101,4 +101,11 @@ class Collection(object):
 
         select = self._api_serializer.decode_find(self.table_name, query, projection, lookup)
 
-        return self.create_cursor(select)
+        return Cursor(self._sql_serializer, self._api_serializer, self._connection, select)
+
+    def insert_one(self, document):
+
+        insert = self._api_serializer.decode_insert_one(self.table_name, document)
+        query, values = self._sql_serializer.encode_insert(insert)
+
+        return InsertResultOne(inserted_id=self._connection.execute(query, values, return_lastrowid=True))

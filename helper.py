@@ -38,3 +38,9 @@ cursor = hours_count.hour.find(
 
 for item in cursor:
     print(json.dumps(item, indent=4))
+
+
+result = hours_count.client.insert_one({
+    u"name": u"POUETLALAs"
+})
+print(result.inserted_id)

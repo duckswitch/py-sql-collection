@@ -15,6 +15,10 @@ class AbstractSQLSerializer(object):
         pass
 
     @abstractmethod
+    def encode_insert(self, insert):
+        pass
+
+    @abstractmethod
     def get_tables(self):
         """
         Query to get all tables from the database.

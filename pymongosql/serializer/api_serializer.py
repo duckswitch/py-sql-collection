@@ -5,6 +5,7 @@ This file contains AbstractSerializer class.
 
 from pymongosql.serializer.api_type import (
     Select,
+    Insert,
     Field,
     Table,
     Join
@@ -140,3 +141,20 @@ class ApiSerializer(object):
             select.fields = self.decode_projection(select.fields, projection)
 
         return select
+
+    def decode_insert_one(self, table, document):
+        insert = Insert(
+            table=self.generate_table(table_name=table, is_root_table=True)
+        )
+        for column in insert.table.columns:
+            found = False
+            for key, value in document.items():
+                if key == column.name:
+                    insert.fields.append(Field(insert.table, column))
+                    insert.values.append(value)
+                    found = True
+                    break
+            if not found and column.required and column.key != u"pri":
+                raise ValueError(u"You must supply a value for field {}.".format(column.name))
+
+        return insert

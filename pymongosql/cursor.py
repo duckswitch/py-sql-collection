@@ -6,7 +6,8 @@ This file contains Cursor class
 import calendar
 from datetime import datetime
 from .serializer.api_type import (
-    Select
+    Select,
+    Insert
 )
 class Cursor(object):
     """
@@ -20,6 +21,7 @@ class Cursor(object):
         self._connection = connection
         self._executed = False
         self._items = []
+        self.inserted_id = None
 
     def limit(self, limit):
         """
@@ -59,7 +61,6 @@ class Cursor(object):
             query, values = self._sql_serializer.encode_select(self.statement)
             rows, description = self._connection.execute(query, values)
             self._items = [self.to_json(row, description) for row in rows]
-
         self._executed = True
 
     def json_set(self, item, path, value):

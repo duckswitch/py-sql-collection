@@ -14,6 +14,16 @@ class MySQLSerializer(AbstractSQLSerializer):
     Serialize MySQL requests.
     """
 
+    def encode_insert(self, insert):
+
+        query = u"INSERT INTO {}({}) VALUES ({})".format(
+            insert.table.name,
+            u", ".join([field.column.name for field in insert.fields]),
+            u", ".join([u"%s"]*len(insert.values))
+        )
+
+        return query, insert.values
+
     def encode_select(self, select):
 
         values = []
