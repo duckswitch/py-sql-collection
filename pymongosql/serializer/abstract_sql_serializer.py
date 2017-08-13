@@ -11,7 +11,7 @@ class AbstractSQLSerializer(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def query(self, statement):
+    def encode_select(self, select):
         pass
 
     @abstractmethod

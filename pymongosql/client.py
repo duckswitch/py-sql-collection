@@ -3,10 +3,10 @@
 This file contains DB class.
 """
 
-from .db import DB
+from pymongosql.serializer.api_serializer import ApiSerializer
+from pymongosql.serializer.mysql_serializer import MySQLSerializer
 from .connection.mysql_connection import MySQLConnection
-from .serializer.sql.mysql_serializer import MySQLSerializer
-from .serializer.api.mongodb_serializer import MongodbSerializer
+from .db import DB
 
 
 class Client(object):
@@ -37,7 +37,7 @@ class Client(object):
             }
             connection = MySQLConnection(**connection_chain)
 
-            api_serializer = MongodbSerializer()
+            api_serializer = ApiSerializer()
             sql_serializer = MySQLSerializer()
 
             databases, _ = connection.execute(*sql_serializer.get_databases())

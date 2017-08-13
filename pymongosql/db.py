@@ -16,7 +16,7 @@ class DB(object):
         Args:
             api_serializer (object): The serializer from api to neutral language.
             sql_serializer (object): The serializer from neutral language to SQL.
-            connection (object): The object which interacts with Database.
+            connection (AbstractConnection): The object which interacts with Database.
         """
         self._api_serialize = api_serializer
         self._sql_serializer = sql_serializer
@@ -27,5 +27,15 @@ class DB(object):
         tables, _ = self._connection.execute(*self._sql_serializer.get_tables())
         
         for table in tables:
-            setattr(self, table[0], Collection(self._api_serialize, self._sql_serializer, self._connection, table[0]))
+            setattr(
+                self,
+                table[0],
+                Collection(
+                    self._api_serialize,
+                    self._sql_serializer,
+                    self._connection,
+                    self._connection._database,
+                    table[0]
+                )
+            )
 

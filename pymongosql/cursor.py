@@ -3,9 +3,11 @@
 This file contains Cursor class
 """
 
-from serializer.api.api_serializer_types import Limit, Offset
-from serializer.api.api_serializer_types import SelectStatement
-
+import calendar
+from datetime import datetime
+from .serializer.api_type import (
+    Select
+)
 class Cursor(object):
     """
     Handle interactions with result set from DB.
@@ -25,13 +27,13 @@ class Cursor(object):
         Args:
             limit (int): Max number of result.
         """
-        if isinstance(self.statement, SelectStatement):
+        if isinstance(self.statement, Select):
             self.statement = self._api_serializer.decode_limit(self.statement, limit)
 
         return self
 
     def sort(self, key_or_list, direction=None):
-        if isinstance(self.statement, SelectStatement):
+        if isinstance(self.statement, Select):
             self.statement = self._api_serializer.decode_sort(self.statement, key_or_list, direction)
         return self
 
@@ -41,7 +43,7 @@ class Cursor(object):
         Args:
             limit (int): Max number of result.
         """
-        if isinstance(self.statement, SelectStatement):
+        if isinstance(self.statement, Select):
             self.statement = self._api_serializer.decode_skip(self.statement, skip)
 
         return self
@@ -53,19 +55,41 @@ class Cursor(object):
             return None
 
     def serialize(self):
-        if isinstance(self.statement, SelectStatement):
-            query, values = self._sql_serializer.query(self.statement)
+        if isinstance(self.statement, Select):
+            query, values = self._sql_serializer.encode_select(self.statement)
             rows, description = self._connection.execute(query, values)
             self._items = [self.to_json(row, description) for row in rows]
 
         self._executed = True
 
+    def json_set(self, item, path, value):
+        """
+        Set the value corresponding to the path in a dict.
+        Arguments:
+            item (dict): The object where we want to put a field.
+            path (unicode): The path separated with dots to the field.
+            value: The value to set on the field.
+        Return:
+            (dict): The updated object.
+        """
+        tab = path.split(u".")
+        if tab[0] not in item and len(tab) > 1:
+            item[tab[0]] = {}
+        if len(tab) == 1:
+            item[tab[0]] = value
+        else:
+            item[tab[0]] = self.json_set(item[tab[0]], u".".join(tab[1:]), value)
+        return item
+
     def to_json(self, row, description):
         output = {}
         for index, value in enumerate(row):
-            
-            value = float(value) if isinstance(value, long) else value
-            output[description[index][0]] = value
+            if isinstance(value, long):
+                value = float(value)
+            elif isinstance(value, datetime):
+                value =  calendar.timegm(value.utctimetuple())
+
+            output = self.json_set(item=output, path=description[index][0], value=value)
         return output
 
     def batch_size(self, batch_size):
