@@ -33,7 +33,7 @@ class AbstractConnection(object):
         pass
 
     @abstractmethod
-    def execute(self, query, values):
+    def execute(self, query, values, return_lastrowid=False, return_rowcount=False):
         """
         Execute a query.
         Args:

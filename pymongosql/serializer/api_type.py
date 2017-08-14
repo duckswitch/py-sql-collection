@@ -90,11 +90,13 @@ class Insert(object):
         self.fields = fields or []
         self.values = values or []
 
+
 class Set(object):
 
     def __init__(self, field, value):
         self.field = field
         self.value = value
+
 
 class Join(object):
 

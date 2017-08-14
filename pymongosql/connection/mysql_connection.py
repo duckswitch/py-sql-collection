@@ -32,8 +32,11 @@ class MySQLConnection(AbstractConnection):
         """
         Execute a query.
         Args:
-            (unicode): The query.
-            (list): The values to inject in the query.
+            query (unicode): The query.
+            values (list): The values to inject in the query.
+            return_lastrowid (bool): Return the field last_rowid from cursor.
+            return_rowcount (bool): Return the field rowcount from cursor.
+
         Returns:
             (list, list): Tuple of two : resulting items & result set description.
         """
