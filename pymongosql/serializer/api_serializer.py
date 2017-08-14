@@ -10,6 +10,7 @@ from pymongosql.serializer.api_type import (
     Table,
     Join,
     Update,
+    Delete,
     Value,
     Filter,
     Operator,
@@ -211,3 +212,13 @@ class ApiSerializer(object):
         update_stmt.sets = self.decode_update_set(update, update_stmt.fields)
         update_stmt.filters = self.decode_query(query, fields=update_stmt.fields)
         return update_stmt
+
+    def decode_delete_many(self, table_name, query, lookup=None):
+        delete_stmt = Delete()
+        delete_stmt.table = self.generate_table(table_name=table_name, is_root_table=True)
+        if lookup:
+            delete_stmt.joins = self.decode_lookup(delete_stmt.table, lookup)
+
+        delete_stmt.fields = self.get_available_fields(delete_stmt.table)
+        delete_stmt.filters = self.decode_query(query, fields=delete_stmt.fields)
+        return delete_stmt

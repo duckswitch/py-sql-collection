@@ -148,10 +148,22 @@ class UpdateResult(object):
         self.matched_count = matched_count
         self.modified_count = modified_count
 
+class DeleteResult(object):
+
+    def __init__(self, deleted_count):
+        self.deleted_count = deleted_count
+
 class Update(object):
     def __init__(self, table=None, fields=None, sets=None, joins=None, filters=None):
         self.table = table
         self.fields = fields or []
         self.sets = sets or []
+        self.joins = joins or []
+        self.filters = filters or []
+
+class Delete(object):
+    def __init__(self, table=None, fields=None, joins=None, filters=None):
+        self.table = table
+        self.fields = fields or []
         self.joins = joins or []
         self.filters = filters or []

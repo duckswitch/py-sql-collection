@@ -90,6 +90,33 @@ class MySQLSerializer(AbstractSQLSerializer):
         """
         return u"DESCRIBE {}".format(table), []
 
+    def encode_delete_many(self, delete):
+        values = []
+
+        # Construct filters
+        where = []
+        for filter in delete.filters:
+            where.append(u"{}.{} {} %s".format(
+                filter.field.table.name,
+                filter.field.column.name,
+                filter.operator.value
+            ))
+            values.append(filter.value)
+
+        if len(where) > 0:
+            where = [u"WHERE"] + where
+        where = u" ".join(where)
+
+        joins = self.encode_joins(delete.joins)
+
+        query = u"DELETE FROM {} {} {}".format(
+            delete.table.name,
+            joins,
+            where
+        )
+
+        return query, values
+
     def encode_update_many(self, update):
 
 

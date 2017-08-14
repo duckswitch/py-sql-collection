@@ -41,8 +41,6 @@ class MySQLConnection(AbstractConnection):
         sql_connection = self.connect()
         sql_cursor = sql_connection.cursor()
 
-        print(query)
-        print(values)
         # Execute query
         sql_cursor.execute(query, values)
 

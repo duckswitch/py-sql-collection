@@ -5,7 +5,7 @@ This file contains Collection class.
 
 import json
 from .cursor import Cursor
-from .serializer.api_type import InsertResultOne, UpdateResult
+from .serializer.api_type import InsertResultOne, UpdateResult, DeleteResult
 
 
 class Collection(object):
@@ -118,4 +118,12 @@ class Collection(object):
         query, values = self._sql_serializer.encode_update_many(update)
         updated_row_id = self._connection.execute(query, values, return_rowcount=True)
         return UpdateResult(matched_count=updated_row_id, modified_count=updated_row_id)
+
+    def delete_many(self, filter, lookup=None, auto_lookup=0):
+
+        lookup = self._proceed_lookup(lookup, auto_lookup)
+        delete = self._api_serializer.decode_delete_many(self.table_name, query=filter, lookup=lookup)
+        query, values = self._sql_serializer.encode_delete_many(delete)
+        print(query)
+        return DeleteResult(deleted_count=self._connection.execute(query, values, return_rowcount=True))
 

@@ -50,12 +50,6 @@ class Cursor(object):
 
         return self
 
-    def get_(self, operation):
-        try:
-            index = self.chain.index(operation)
-        except ValueError:
-            return None
-
     def serialize(self):
         if isinstance(self.statement, Select):
             query, values = self._sql_serializer.encode_select(self.statement)
