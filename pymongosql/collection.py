@@ -26,8 +26,6 @@ class Collection(object):
         self._connection = connection
         self._database_name = database_name
         self.table_name = table_name
-        # Discover table config.
-
 
     def discover_columns(self, table_name=None):
         """

@@ -4,7 +4,9 @@ This file contains tests for MySQLSerializer class.
 """
 
 from pytest import fixture
-from pymongosql.serializer.sql.mysql_serializer import MySQLSerializer
+
+from pymongosql.serializer.mysql_serializer import MySQLSerializer
+
 
 @fixture(scope=u"function")
 def mysql_serializer():
@@ -34,7 +36,7 @@ def test_interpret_db_column(mysql_serializer):
     Test different cases of column parsing.
     """
     column = mysql_serializer.interpret_db_column(
-        (u"id", "int(11)", "NO", u"PRI", None, u"auto_increment")
+        (u"id", u"int(11)", u"NO", u"PRI", None, u"auto_increment")
     )
     assert column.name == u"id"
     assert column.type == u"number"
@@ -44,7 +46,7 @@ def test_interpret_db_column(mysql_serializer):
     assert column.extra == u"auto_increment"
 
     column = mysql_serializer.interpret_db_column(
-        (u"id", "varchar(50)", "NO", u"", None, u"")
+        (u"id", u"varchar(50)", u"NO", u"", None, u"")
     )
     assert column.name == u"id"
     assert column.type == u"string"
@@ -54,7 +56,7 @@ def test_interpret_db_column(mysql_serializer):
     assert column.extra == u""
 
     column = mysql_serializer.interpret_db_column(
-        (u"started_at", "datetime", "YES", u"", None, u"")
+        (u"started_at", u"datetime", u"YES", u"", None, u"")
     )
     assert column.name == u"started_at"
     assert column.type == u"timestamp"

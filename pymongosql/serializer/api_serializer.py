@@ -16,6 +16,9 @@ from pymongosql.serializer.api_type import (
     Operator,
     Set
 )
+from .api_exception import (
+        WrongParameter
+)
 
 class ApiSerializer(object):
     """
@@ -34,15 +37,51 @@ class ApiSerializer(object):
         self.table_columns = {}
 
     def decode_limit(self, statement, limit):
+        """
+        Add a limit to a Select statement.
+        Args:
+            statement (Select): The statement to update.
+            limit (int): How much the limit is.
+        Returns:
+            (Select): The updated statement.
+        """
+        if not isinstance(limit, int) or limit < 0:
+            raise WrongParameter(
+                u"Limit must be greater or equal to 0."
+            )
         statement.limit = limit
         return statement
 
 
     def decode_skip(self, statement, skip):
+        """
+        Add a skip to a Select statement.
+        Args:
+            statement (Select): The statement to update.
+            skip (int): How much the limit is.
+        Returns:
+            (Select): The updated statement.
+        """
+        if not isinstance(skip, int) or skip < 0:
+            raise WrongParameter(
+                u"Skip must be greater or equal to 0."
+            )
         statement.offset = skip
         return statement
 
     def generate_table(self, table_name, alias=None, is_root_table=False):
+        """
+        Generate a table representation 
+        regarding parameters and table_columns in memory.
+        Args:
+            table_name (unicode): The name of the table to generate.
+            alias (unicode): The alias we could use to call the table.
+            is_root_table (bool): Used when there are JOINS, to know if it is
+                the main table or not.
+        Returns:
+            (Table): The generated table.
+        """
+        
         return Table(
             name=table_name,
             alias=alias or table_name,
@@ -51,12 +90,30 @@ class ApiSerializer(object):
         )
 
     def generate_field(self, table, field_name, prefix=None):
+        """
+        Generate a field used in where or select.
+        Args:
+            table (Table): The table the field comes from.
+            field_name (unicode): The name we want to give to the field.
+            prefix (unicode): A prefix to apply to the field alias.
+        Returns:
+            (Field): The generated field.
+        """
+        # For each column in the memory representation
+        # of the table.
         for column in self.table_columns[table.name]:
+            # If the column name matches the field we want
+            # to create.
             if column.name == field_name:
+                # Check if root table, then alias is directly the name
+                # (it will be there once).
                 if table.is_root_table:
                     alias = [column.name]
                 else:
-                    alias = [prefix, column.name] if prefix else [table.alias or table.name, column.name]
+                    # Else it can be used several time. Prefix is important.
+                    alias = [
+                        prefix, column.name
+                    ] if prefix else [table.alias or table.name, column.name]
 
                 return Field(
                     column=column,
