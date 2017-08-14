@@ -14,7 +14,9 @@ from pymongosql.serializer.api_type import (
     Value,
     Filter,
     Operator,
-    Set
+    Set,
+    Or,
+    And
 )
 from .api_exception import (
         WrongParameter
@@ -33,6 +35,10 @@ class ApiSerializer(object):
             u"$gte": u">=",
             u"$lt": u"<",
             u"$lte": u"<="
+        }
+        self._RECURSIVE_OPERATORS = {
+            u"$and": And,
+            u"$or": Or
         }
         self.table_columns = {}
 
@@ -123,8 +129,19 @@ class ApiSerializer(object):
 
 
     def get_available_fields(self, table, prefix=None, to_ignore=None):
+        """
+        Get a table, and look for all available fields inside.
+        Args:
+            table (Table): The table to prospect.
+            prefix (unicode): A potential prefix to apply on the resulting field.
+            to_ignore (list of Field): Field to ignore if we find them.
+        Returns:
+            (list of Field): The resulting fields coming from the table.
+        """
         if to_ignore is not None:
-            to_ignore = [field.alias for field in to_ignore]
+            to_ignore = [
+                field.alias or field.column.name for field in to_ignore
+            ]
         else:
             to_ignore = []
 
@@ -137,6 +154,14 @@ class ApiSerializer(object):
 
 
     def decode_lookup(self, table, lookup):
+        """
+        Test decode lookup.
+        Args:
+            table (Table): The table where we look for joins.
+            lookup (dict): The lookup representation as given to the methods.
+        Returns:
+            (list of Join): Joins representations resulting.
+        """
         joins = []
         for item in lookup:
             from_table = table if u"to" not in item else self.generate_table(
@@ -203,9 +228,11 @@ class ApiSerializer(object):
         for prefix, table in join_tables:
             select.fields += self.get_available_fields(table, prefix, fields_to_ignore)
 
-
         if projection:
             select.fields = self.decode_projection(select.fields, projection)
+
+        if query:
+            select.filters = self.decode_query(query, fields=select.fields)
 
         return select
 
@@ -226,23 +253,40 @@ class ApiSerializer(object):
 
         return insert
 
-    def decode_query(self, query, fields, join_operator=u"$and"):
+    def decode_query(self, query, fields, parent=None, join_operator=None):
+        join_operator = join_operator or And
         field_names = [field.alias for field in fields]
         filters = []
         if not isinstance(query, list):
             query = [query]
-        for filter in query:
-            for key, value in filter.items():
+
+        for filt in query:
+            for key, value in filt.items():
                 if key in field_names:
 
-                    field = fields[field_names.index(key)]
+                    if isinstance(value, dict):
+                        filters += [self.decode_query(value, fields, parent=key)]
+                    else:
+                        field = fields[field_names.index(key)]
+                        operator = Operator(u"=")
+
+                        filters.append(Filter(
+                            field,
+                            operator,
+                            value=value
+                        ))
+
+                elif key in self._OPERATORS:
+
+                    field = fields[field_names.index(parent)]
+                    operator = Operator(self._OPERATORS[key])
                     filters.append(Filter(
                         field,
-                        operator=Operator(u"="),
+                        operator,
                         value=value
                     ))
-
-        return filters
+      
+        return join_operator(filters)
 
     def decode_update_set(self, update, fields):
         field_names = [field.alias for field in fields]

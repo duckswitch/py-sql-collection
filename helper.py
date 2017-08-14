@@ -9,7 +9,11 @@ client = Client(host=u"127.0.0.1", user=u"root", password=u"localroot1234")
 hours_count = client.hours_count
 
 cursor = hours_count.hour.find(
-    query={u"id": 1},
+    query={
+        u"id": {
+            u"$eq": 20
+        }
+    },
     lookup=[
         {
             u"from": u"project",
@@ -24,7 +28,7 @@ cursor = hours_count.hour.find(
             u"as": u"project.client"
         }
     ]
-).limit(1).skip(0)
+).limit(20).skip(0)
 
 for item in cursor:
     print(json.dumps(item, indent=4))

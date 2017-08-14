@@ -9,19 +9,40 @@ from pymongosql.serializer.api_serializer import ApiSerializer
 from pymongosql.serializer.api_type import (
     Select,
     Column,
-    Table
+    Table,
+    Field
 )
 from pymongosql.serializer.api_exception import (
     WrongParameter
 )
 
+
 @fixture(scope=u"function")
-def dummy_table_columns():
+def client_table_columns():
+    return [
+        Column(name=u"id", typ=u"number", required=True, key=u"pri", extra=u"auto_increment", default=None),
+        Column(name=u"name", typ=u"string", required=True, key=u"", extra=u"", default=None)
+    ]
+
+@fixture(scope=u"function")
+def project_table_columns():
+    return [
+        Column(
+            name=u"id",
+            typ=u"number",
+            required=True,
+            key=u"pri",
+            extra=u"auto_increment",
+            default=None),
+        Column(name=u"name", typ=u"string", required=True, key=u"", extra=u"", default=None),
+        Column(name=u"client_id", typ=u"number", required=True, key=u"mul", extra=u"", default=None)
+    ]
+
+@fixture(scope=u"function")
+def dummy_table_columns(client_table_columns, project_table_columns):
     return {
-        u"client": [
-            Column(name=u"id", typ=u"number", required=True, key=u"pri", extra=u"auto_increment", default=None),
-            Column(name=u"name", typ=u"string", required=True, key=u"", extra=u"", default=None)
-        ]
+        u"client": client_table_columns,
+        u"project": project_table_columns
     }
 
 @fixture(scope=u"function")
@@ -40,8 +61,14 @@ def dummy_select():
     """
     return Select()
 
-
-
+@fixture(scope=u"function")
+def client_table(api_serializer):
+    return Table(
+        name=u"client",
+        alias=u"client",
+        columns=api_serializer.table_columns[u"client"],
+        is_root_table=True
+    )
 
 def test_decode_limit(api_serializer, dummy_select):
     """
@@ -81,16 +108,10 @@ def test_generate_table(api_serializer):
     assert table.alias == u"DummyAlias"
     assert table.is_root_table
 
-def test_generate_field(api_serializer):
+def test_generate_field(api_serializer, client_table):
     """
     test simple working of generate_field method.
     """
-    client_table = Table(
-        name=u"client",
-        alias=u"client",
-        columns=api_serializer.table_columns[u"client"],
-        is_root_table=True
-    )
     # test when table is root.
     args = [client_table, u"name", u"project.client"]
     field = api_serializer.generate_field(*args)
@@ -108,8 +129,63 @@ def test_generate_field(api_serializer):
     field = api_serializer.generate_field(*args)
     assert field.alias == u"client.name"
 
+def test_get_available_fields(api_serializer, client_table):
+    """
+    Test simple working of get_available_fields.
+    """
+    client_id_column = api_serializer.table_columns[u"client"][0]
+    fields = api_serializer.get_available_fields(
+        client_table,
+        prefix=u"project.client",
+        to_ignore=[
+            Field(
+                table=client_table,
+                column=client_id_column
+            )
+        ]
+    )
+    assert len(fields) == 1
+    assert fields[0].column == client_table.columns[1]
 
+@fixture(scope=u"function")
+def project_fields(api_serializer):
+    """
+    Get fields from a table named project.
+    """
+    project_table = api_serializer.generate_table(u"project")
+    project_table.is_root_table = True
+    client_table = api_serializer.generate_table(u"client")
 
+    return (
+        api_serializer.get_available_fields(project_table) +
+        api_serializer.get_available_fields(client_table, prefix=u"client")
+    )
 
+def test_decode_query_equal(api_serializer, project_fields):
+    """
+    Test with equal filter.
+    """
+    filters = api_serializer.decode_query(
+        {u"name": u"test"},
+        project_fields
+    )
+    assert filters[0].field.column.name == u"name"
+    assert filters[0].operator.value == u"="
+    assert filters[0].value == u"test"
 
-
+def test_decode_query_custom_op(api_serializer, project_fields):
+    """
+    Test with $gte filter & joined field.
+    """
+    filters = api_serializer.decode_query(
+        {
+            u"client.id": {
+                u"$gte": 5
+            }
+        },
+        project_fields
+    )
+    assert filters[0].field.column.name == u"id"
+    assert filters[0].field.alias == u"client.id"
+    assert filters[0].operator.value == u">="
+    assert filters[0].value == 5

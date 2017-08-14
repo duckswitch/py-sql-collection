@@ -167,7 +167,7 @@ class Collection(object):
         """
         lookup = self._proceed_lookup(lookup, auto_lookup)
         delete = self._api_serializer.decode_delete_many(
-            self.table_name, query=filter, lookup=lookup
+            self.table_name, query=query, lookup=lookup
         )
         query, values = self._sql_serializer.encode_delete_many(delete)
         return DeleteResult(

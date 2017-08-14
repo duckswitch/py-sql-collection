@@ -66,14 +66,7 @@ class Field(object):
         return u"Field({}.{} AS {})".format(self.table.name, self.column.name, self.alias)
 
 
-class Select(object):
 
-    def __init__(self, fields=None, table=None, joins=None, limit=None, offset=0):
-        self.fields = fields or []
-        self.table = table
-        self.joins = joins or []
-        self.limit = limit or 100
-        self.offset = offset or 0
 
 
 class Value(object):
@@ -128,6 +121,14 @@ class Join(object):
             self.to_field.column.name
         )
 
+class Or(object):
+    def __init__(self, filters):
+        self.filters = filters
+
+class And(object):
+    def __init__(self, filters):
+        self.filters = filters
+
 class Filter(object):
 
     def __init__(self, field, operator, value):
@@ -161,11 +162,21 @@ class Update(object):
         self.fields = fields or []
         self.sets = sets or []
         self.joins = joins or []
-        self.filters = filters or []
+        self.filters = filters or None
 
 class Delete(object):
     def __init__(self, table=None, fields=None, joins=None, filters=None):
         self.table = table
         self.fields = fields or []
         self.joins = joins or []
-        self.filters = filters or []
+        self.filters = filters or None
+
+class Select(object):
+
+    def __init__(self, fields=None, table=None, joins=None, limit=None, offset=0, filters=None):
+        self.fields = fields or []
+        self.table = table
+        self.joins = joins or []
+        self.filters = filters
+        self.limit = limit or 100
+        self.offset = offset or 0
