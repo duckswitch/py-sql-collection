@@ -8,7 +8,12 @@ from pymongosql.serializer.api_type import (
     Insert,
     Field,
     Table,
-    Join
+    Join,
+    Update,
+    Value,
+    Filter,
+    Operator,
+    Set
 )
 
 class ApiSerializer(object):
@@ -60,7 +65,11 @@ class ApiSerializer(object):
 
 
     def get_available_fields(self, table, prefix=None, to_ignore=None):
-        to_ignore = [field.alias for field in to_ignore] or []
+        if to_ignore is not None:
+            to_ignore = [field.alias for field in to_ignore]
+        else:
+            to_ignore = []
+
         fields = []
         for column in table.columns:
             field = self.generate_field(table, column.name, prefix)
@@ -142,9 +151,9 @@ class ApiSerializer(object):
 
         return select
 
-    def decode_insert_one(self, table, document):
+    def decode_insert_one(self, table_name, document):
         insert = Insert(
-            table=self.generate_table(table_name=table, is_root_table=True)
+            table=self.generate_table(table_name=table_name, is_root_table=True)
         )
         for column in insert.table.columns:
             found = False
@@ -158,3 +167,47 @@ class ApiSerializer(object):
                 raise ValueError(u"You must supply a value for field {}.".format(column.name))
 
         return insert
+
+    def decode_query(self, query, fields, join_operator=u"$and"):
+        field_names = [field.alias for field in fields]
+        filters = []
+        if not isinstance(query, list):
+            query = [query]
+        for filter in query:
+            for key, value in filter.items():
+                if key in field_names:
+
+                    field = fields[field_names.index(key)]
+                    filters.append(Filter(
+                        field,
+                        operator=Operator(u"="),
+                        value=value
+                    ))
+
+        return filters
+
+    def decode_update_set(self, update, fields):
+        field_names = [field.alias for field in fields]
+        sets = []
+        for key in update:
+            if key == u"$set":
+                for key, value in update[key].items():
+                    if key in field_names:
+                        field = fields[field_names.index(key)]
+                        sets.append(Set(
+                            field,
+                            value
+                        ))
+
+        return sets
+
+    def decode_update_many(self, table_name, query, update, options, lookup=None):
+        update_stmt = Update()
+        update_stmt.table = self.generate_table(table_name=table_name, is_root_table=True)
+        if lookup:
+            update_stmt.joins = self.decode_lookup(update_stmt.table, lookup)
+
+        update_stmt.fields = self.get_available_fields(update_stmt.table)
+        update_stmt.sets = self.decode_update_set(update, update_stmt.fields)
+        update_stmt.filters = self.decode_query(query, fields=update_stmt.fields)
+        return update_stmt

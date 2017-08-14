@@ -90,6 +90,11 @@ class Insert(object):
         self.fields = fields or []
         self.values = values or []
 
+class Set(object):
+
+    def __init__(self, field, value):
+        self.field = field
+        self.value = value
 
 class Join(object):
 
@@ -121,9 +126,32 @@ class Join(object):
             self.to_field.column.name
         )
 
+class Filter(object):
 
+    def __init__(self, field, operator, value):
+        self.field = field
+        self.operator = operator
+        self.value = value
+
+class Operator(object):
+    def __init__(self, value):
+        self.value = value
 
 class InsertResultOne(object):
 
     def __init__(self, inserted_id):
         self.inserted_id = inserted_id
+
+class UpdateResult(object):
+
+    def __init__(self, matched_count, modified_count):
+        self.matched_count = matched_count
+        self.modified_count = modified_count
+
+class Update(object):
+    def __init__(self, table=None, fields=None, sets=None, joins=None, filters=None):
+        self.table = table
+        self.fields = fields or []
+        self.sets = sets or []
+        self.joins = joins or []
+        self.filters = filters or []

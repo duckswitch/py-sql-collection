@@ -28,7 +28,7 @@ class MySQLConnection(AbstractConnection):
 
         return MySQLdb.connect(**kwargs)
 
-    def execute(self, query, values, return_lastrowid=False):
+    def execute(self, query, values, return_lastrowid=False, return_rowcount=False):
         """
         Execute a query.
         Args:
@@ -41,11 +41,16 @@ class MySQLConnection(AbstractConnection):
         sql_connection = self.connect()
         sql_cursor = sql_connection.cursor()
 
+        print(query)
+        print(values)
         # Execute query
         sql_cursor.execute(query, values)
 
         if return_lastrowid:
             result = sql_cursor.lastrowid
+            sql_cursor.connection.commit()
+        elif return_rowcount:
+            result = sql_cursor.rowcount
             sql_cursor.connection.commit()
         else:
             result = sql_cursor.fetchall(), sql_cursor.description

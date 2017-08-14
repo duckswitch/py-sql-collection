@@ -6,8 +6,7 @@ This file contains MySQLSerializer class.
 from .abstract_sql_serializer import AbstractSQLSerializer
 from .api_type import (
     Column,
-    Field,
-
+    Field
 )
 class MySQLSerializer(AbstractSQLSerializer):
     """
@@ -24,12 +23,8 @@ class MySQLSerializer(AbstractSQLSerializer):
 
         return query, insert.values
 
-    def encode_select(self, select):
-
-        values = []
-        fields = [u"{}.{} AS '{}'".format(field.table.name, field.column.name, field.alias) for field in select.fields]
-        table = u"{} {}".format(select.table.name, select.table.alias)
-        joins = [
+    def encode_joins(self, joins):
+        output = [
             u"{} {} ON {}.{} = {}.{}".format(
                 join.to_table.name,
                 join.to_table.alias,
@@ -38,9 +33,17 @@ class MySQLSerializer(AbstractSQLSerializer):
                 join.to_table.name,
                 join.to_field.column.name
             )
-            for join in select.joins
-        ]
-        joins = u" JOIN " + u" JOIN ".join(joins) if len(joins) > 0 else u""
+            for join in joins
+            ]
+        output = u"JOIN " + u" JOIN ".join(output) if len(output) > 0 else u""
+        return output
+
+    def encode_select(self, select):
+
+        values = []
+        fields = [u"{}.{} AS '{}'".format(field.table.name, field.column.name, field.alias) for field in select.fields]
+        table = u"{} {}".format(select.table.name, select.table.alias)
+        joins = self.encode_joins(select.joins)
         query = u"SELECT {} FROM {} {} LIMIT %s OFFSET %s".format(u", ".join(fields), table, joins)
         values += [select.limit, select.offset]
         return u"SELECT * FROM ({}) AS A0".format(query), values
@@ -86,6 +89,43 @@ class MySQLSerializer(AbstractSQLSerializer):
             (unicode, list): A query and values to inject in it.
         """
         return u"DESCRIBE {}".format(table), []
+
+    def encode_update_many(self, update):
+
+
+
+        values = []
+        # Construct SETS
+        sets = []
+        for set_stmt in update.sets:
+            sets.append(u"SET {}.{} = %s".format(set_stmt.field.table.name, set_stmt.field.column.name))
+            values.append(set_stmt.value)
+        sets = u", ".join(sets)
+
+        # Construct filters
+        where = []
+        for filter in update.filters:
+            where.append(u"{}.{} {} %s".format(
+                filter.field.table.name,
+                filter.field.column.name,
+                filter.operator.value
+            ))
+            values.append(filter.value)
+
+        if len(where) > 0:
+            where = [u"WHERE"] + where
+        where = u" ".join(where)
+
+        joins = self.encode_joins(update.joins)
+
+        query = u"UPDATE {} {} {} {}".format(
+            update.table.name,
+            joins,
+            sets,
+            where
+        )
+
+        return query, values
 
     def interpret_db_column(self, row):
         """

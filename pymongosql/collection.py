@@ -5,7 +5,7 @@ This file contains Collection class.
 
 import json
 from .cursor import Cursor
-from .serializer.api_type import InsertResultOne
+from .serializer.api_type import InsertResultOne, UpdateResult
 
 
 class Collection(object):
@@ -73,18 +73,9 @@ class Collection(object):
 
         return lookup
 
-    def find(self, query=None, projection=None, lookup=None, auto_lookup=0):
-        """
-        Do a find query on the collection.
-        Args:
-            query (dict): The mongo like query to execute.
-            projection (dict): The projection parameter determines which fields are returned
-                in the matching documents.
-        """
-
+    def _proceed_lookup(self, lookup=None, auto_lookup=0):
         if lookup is None:
             lookup = self._auto_lookup(max_deep=auto_lookup)
-
 
         potential_tables = [self.table_name]
         if lookup is not None:
@@ -97,8 +88,18 @@ class Collection(object):
         for table in potential_tables:
             self.discover_columns(table)
 
+        return lookup
 
+    def find(self, query=None, projection=None, lookup=None, auto_lookup=0):
+        """
+        Do a find query on the collection.
+        Args:
+            query (dict): The mongo like query to execute.
+            projection (dict): The projection parameter determines which fields are returned
+                in the matching documents.
+        """
 
+        lookup = self._proceed_lookup(lookup, auto_lookup)
         select = self._api_serializer.decode_find(self.table_name, query, projection, lookup)
 
         return Cursor(self._sql_serializer, self._api_serializer, self._connection, select)
@@ -109,3 +110,12 @@ class Collection(object):
         query, values = self._sql_serializer.encode_insert(insert)
 
         return InsertResultOne(inserted_id=self._connection.execute(query, values, return_lastrowid=True))
+
+    def update_many(self, query, update, options, lookup=None, auto_lookup=0):
+
+        lookup = self._proceed_lookup(lookup, auto_lookup)
+        update = self._api_serializer.decode_update_many(self.table_name, query, update, options, lookup)
+        query, values = self._sql_serializer.encode_update_many(update)
+        updated_row_id = self._connection.execute(query, values, return_rowcount=True)
+        return UpdateResult(matched_count=updated_row_id, modified_count=updated_row_id)
+
