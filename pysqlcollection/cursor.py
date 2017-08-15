@@ -34,7 +34,21 @@ class Cursor(object):
 
         return self
 
+    def count(self, with_limit_and_skip=False):
+        if isinstance(self.statement, Select):
+            query, values = self._sql_serializer.encode_select_count(self.statement, with_limit_and_skip)
+            rows, _ = self._connection.execute(query, values)
+            return int(rows[0][0])
+
     def sort(self, key_or_list, direction=None):
+        """
+        Applies a sort on the cursor.
+        Args:
+            key_or_list (unicode or list of tuple): Field to sort or sort list for many fields.
+            direction (int): Direction if only one key supplied to the sort.
+        Return:
+            (Cursor): The updated cursor.
+        """
         if isinstance(self.statement, Select):
             self.statement = self._api_serializer.decode_sort(self.statement, key_or_list, direction)
         return self

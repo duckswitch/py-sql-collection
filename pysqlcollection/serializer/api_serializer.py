@@ -16,7 +16,8 @@ from pysqlcollection.serializer.api_type import (
     Operator,
     Set,
     Or,
-    And
+    And,
+    Sort
 )
 from .api_exception import (
         WrongParameter
@@ -56,6 +57,38 @@ class ApiSerializer(object):
                 u"Limit must be greater or equal to 0."
             )
         statement.limit = limit
+        return statement
+
+    def decode_sort(self, statement, key_or_list, direction=None):
+        """
+        Applies a sort on the cursor and inject it in the statement object.
+        Args:
+            key_or_list (unicode or list of tuple): Field to sort or sort list for many fields.
+            direction (int): Direction if only one key supplied to the sort.
+        Return:
+            (Cursor): The updated cursor.
+        """
+        if not isinstance(key_or_list, list):
+            key_or_list = [(key_or_list, direction)]
+
+        field_names = [field.alias for field in statement.fields]
+        
+        sorts = []
+        for key, direction in key_or_list:
+            if direction not in [1, -1]:
+                raise WrongParameter(u"You can only sort direction with '1' (ASC) or '-1' (DESC).")
+
+            if key in field_names:            
+                sorts.append(
+                    Sort(
+                        field=statement.fields[field_names.index(key)],
+                        direction=direction
+                    )
+                )
+            else:
+                raise WrongParameter(u"Field '{}' can't be sorted because it doesn't exist.".format(key))
+          
+        statement.sorts = sorts
         return statement
 
 
@@ -192,7 +225,7 @@ class ApiSerializer(object):
                             (field.alias != key and field.alias not in projection and mode == 1) or
                             (field.alias in projection and mode == -1)
                 ):
-                    del fields[index]
+                    fields[index].display = False
 
         return fields
 

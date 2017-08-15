@@ -64,3 +64,4 @@ def test_interpret_db_column(mysql_serializer):
     assert column.key == u""
     assert column.default is None
     assert column.extra == u""
+

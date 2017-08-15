@@ -11,8 +11,12 @@ hours_count = client.hours_count
 cursor = hours_count.hour.find(
     query={
         u"id": {
-            u"$eq": 20
+            u"$gte": 20
         }
+    },
+    projection={
+        u"id": 1,
+        u"project.name": 1
     },
     lookup=[
         {
@@ -28,11 +32,11 @@ cursor = hours_count.hour.find(
             u"as": u"project.client"
         }
     ]
-).limit(20).skip(0)
+).limit(2).skip(0).sort([(u"id", 1)])
 
 for item in cursor:
     print(json.dumps(item, indent=4))
-
+    
 cursor = hours_count.hour.find(
     projection={
         u"project.name": 1
@@ -51,7 +55,7 @@ result = hours_count.client.insert_one({
 })
 
 
-# print(result.inserted_id)
+print(result.inserted_id)
 
 result = hours_count.project.update_many(query={
     u"name": u"Project Tango"

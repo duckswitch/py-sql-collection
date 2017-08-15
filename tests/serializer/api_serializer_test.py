@@ -13,7 +13,8 @@ from pysqlcollection.serializer.api_type import (
     Column,
     Table,
     Field,
-    And
+    And,
+    Sort
 )
 from pysqlcollection.serializer.api_exception import (
     WrongParameter
@@ -58,19 +59,28 @@ def api_serializer(dummy_table_columns):
     return api_serializer
 
 @fixture(scope=u"function")
-def dummy_select():
-    """
-    Initiate object.
-    """
-    return Select()
-
-@fixture(scope=u"function")
 def client_table(api_serializer):
     return Table(
         name=u"client",
         alias=u"client",
         columns=api_serializer.table_columns[u"client"],
         is_root_table=True
+    )
+
+@fixture(scope=u"function")
+def dummy_select(client_table, client_table_columns):
+    """
+    Initiate object.
+    """
+    return Select(
+        table=client_table,
+        fields=[
+            Field(
+                table=client_table,
+                column=column,
+                alias=column.name)
+            for column in client_table_columns
+        ]
     )
 
 def test_decode_limit(api_serializer, dummy_select):
@@ -96,6 +106,15 @@ def test_decode_skip(api_serializer, dummy_select):
         api_serializer.decode_skip(dummy_select, -12)
 
     assert exec_info.value.api_error_code == u"WRONG_PARAMETER"
+
+def test_decode_sort(api_serializer, dummy_select):
+    """
+    Test for simple parameters.
+    """
+    select = api_serializer.decode_sort(dummy_select, u"name", 1)
+    assert len(select.sorts) == 1
+    assert select.sorts[0].field.alias == u"name"
+    assert select.sorts[0].direction == 1
 
 def test_generate_table(api_serializer):
     """

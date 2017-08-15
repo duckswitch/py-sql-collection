@@ -22,6 +22,9 @@ class ApiSerializerException(Exception):
         rv[u'message'] = self.message
         return rv
 
+    def __str__(self):
+        return repr(self.message)
+
 class WrongParameter(ApiSerializerException):
     """
     Raise when the API meets a wrong parameter.

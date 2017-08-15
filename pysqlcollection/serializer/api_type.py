@@ -50,17 +50,19 @@ class Column(object):
 
 class Field(object):
 
-    def __init__(self, table, column, alias=None):
+    def __init__(self, table, column, alias=None, display=True):
         """
         The representation of a field.
         Args:
             table (Table): The table it comes from.
             column (Column): The column it displays.
             alias (unicode): An optional alias to use.
+            display (boolean): When it is relevant, do we display it or not ?
         """
         self.table = table
         self.column = column
         self.alias = alias
+        self.display = display
 
     def __str__(self):
         return u"Field({}.{} AS {})".format(self.table.name, self.column.name, self.alias)
@@ -171,12 +173,24 @@ class Delete(object):
         self.joins = joins or []
         self.filters = filters or None
 
-class Select(object):
+class Sort():
+    """
+    This object wraps a Sort definition for the API.
+    """
+    def __init__(self, field, direction):
+        self.field = field
+        self.direction = direction
 
-    def __init__(self, fields=None, table=None, joins=None, limit=None, offset=0, filters=None):
+class Select(object):
+    """
+    Object which wraps a Select request for the API.
+    """
+    def __init__(self, fields=None, table=None, joins=None, limit=None, offset=0, filters=None, sorts=None, aggregation=None):
         self.fields = fields or []
         self.table = table
         self.joins = joins or []
         self.filters = filters
         self.limit = limit or 100
         self.offset = offset or 0
+        self.sorts = sorts or []
+        self.aggregation = None

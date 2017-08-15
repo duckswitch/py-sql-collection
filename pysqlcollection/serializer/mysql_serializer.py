@@ -79,21 +79,35 @@ class MySQLSerializer(AbstractSQLSerializer):
 
         return where, values
 
-    def encode_select(self, select):
-        print(u"CAL")
+    def encode_select_count(self, select, with_limit_and_skip=False):
+        query, values = self.encode_select(select, with_limit_and_skip=with_limit_and_skip)
+        return u"SELECT COUNT(*) FROM ({}) AS A1".format(query), values
+
+    def encode_select(self, select, with_limit_and_skip=True):
         values = []
-        fields = [u"{}.{} AS '{}'".format(field.table.name, field.column.name, field.alias) for field in select.fields]
+        fields = [u"{}.{} AS '{}'".format(field.table.name, field.column.name, field.alias) for field in select.fields if field.display]
         table = u"{} {}".format(select.table.name, select.table.alias)
         joins = self.encode_joins(select.joins)
-        # limit & offset
         
         # Construct filters
         where, where_values = self.encode_filters(select.filters, is_select=True)
         values += where_values
-        values += [select.limit, select.offset]
+        
 
+        # Construct sort
+        sort_bindings = {
+            1: u"ASC",
+            -1: u"DESC"
+        }
+        sorts = u", ".join([u"{} {}".format(sort.field.alias, sort_bindings[sort.direction]) for sort in select.sorts])
+        sorts = u"ORDER BY {}".format(sorts) if len(sorts) > 0 else sorts
         query = u"SELECT {} FROM {} {} ".format(u", ".join(fields), table, joins)
-        query = u"SELECT * FROM ({}) AS A0 {} LIMIT %s OFFSET %s".format(query, where)
+        limit_offset = u""
+        if with_limit_and_skip:
+            limit_offset = u"LIMIT %s OFFSET %s"
+            values += [select.limit, select.offset]
+
+        query = u"SELECT * FROM ({}) AS A0 {} {} {}".format(query, where, sorts, limit_offset)
         return query, values
 
     def get_relations(self, database_name, table_name):
@@ -184,8 +198,6 @@ class MySQLSerializer(AbstractSQLSerializer):
             sets,
             where
         )
-        print(query)
-        print(values)
         return query, values
 
     def interpret_db_column(self, row):
