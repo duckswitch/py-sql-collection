@@ -5,7 +5,7 @@ This file contains tests for MySQLSerializer class.
 
 from pytest import fixture
 
-from pymongosql.serializer.mysql_serializer import MySQLSerializer
+from pysqlcollection.serializer.mysql_serializer import MySQLSerializer
 
 
 @fixture(scope=u"function")

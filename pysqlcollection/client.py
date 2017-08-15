@@ -3,8 +3,8 @@
 This file contains DB class.
 """
 
-from pymongosql.serializer.api_serializer import ApiSerializer
-from pymongosql.serializer.mysql_serializer import MySQLSerializer
+from pysqlcollection.serializer.api_serializer import ApiSerializer
+from pysqlcollection.serializer.mysql_serializer import MySQLSerializer
 from .connection.mysql_connection import MySQLConnection
 from .db import DB
 

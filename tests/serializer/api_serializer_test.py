@@ -4,15 +4,18 @@ This file contains tests for ApiSerialiser class.
 """
 
 import pytest
+import json
 from pytest import fixture
-from pymongosql.serializer.api_serializer import ApiSerializer
-from pymongosql.serializer.api_type import (
+from collections import OrderedDict
+from pysqlcollection.serializer.api_serializer import ApiSerializer
+from pysqlcollection.serializer.api_type import (
     Select,
     Column,
     Table,
-    Field
+    Field,
+    And
 )
-from pymongosql.serializer.api_exception import (
+from pysqlcollection.serializer.api_exception import (
     WrongParameter
 )
 
@@ -165,27 +168,46 @@ def test_decode_query_equal(api_serializer, project_fields):
     """
     Test with equal filter.
     """
-    filters = api_serializer.decode_query(
+    root_and = api_serializer.decode_query(
         {u"name": u"test"},
         project_fields
     )
-    assert filters[0].field.column.name == u"name"
-    assert filters[0].operator.value == u"="
-    assert filters[0].value == u"test"
+    assert root_and.filters[0].field.column.name == u"name"
+    assert root_and.filters[0].operator.value == u"="
+    assert root_and. filters[0].value == u"test"
 
 def test_decode_query_custom_op(api_serializer, project_fields):
     """
     Test with $gte filter & joined field.
     """
-    filters = api_serializer.decode_query(
-        {
-            u"client.id": {
-                u"$gte": 5
-            }
-        },
+    # Order is important to don't break the tests.
+    filt = json.loads("""
+    {
+        "client.id": {
+            "$gte": 5,
+            "$lte": 12
+        }
+    }
+    """, object_pairs_hook=OrderedDict)
+    root_and = api_serializer.decode_query(
+        filt,
         project_fields
     )
-    assert filters[0].field.column.name == u"id"
-    assert filters[0].field.alias == u"client.id"
-    assert filters[0].operator.value == u">="
-    assert filters[0].value == 5
+    # Because it's a dict into a dict, another level is created.
+    # We expect this :
+    # And(
+    #   And(
+    #       >= 5,
+    #       <= 12
+    #   )
+    # )
+    assert len(root_and.filters) == 1 and isinstance(root_and.filters[0], And)
+    client_id_and = root_and.filters[0]
+    gte = client_id_and.filters[0]
+    lte = client_id_and.filters[1]
+    assert gte.operator.value == u">="
+    assert gte.field.alias == u"client.id"
+    assert gte.value == 5
+    assert lte.operator.value == u"<="
+    assert lte.field.alias == u"client.id"
+    assert lte.value == 12

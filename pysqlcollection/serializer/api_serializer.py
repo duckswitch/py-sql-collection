@@ -3,7 +3,7 @@
 This file contains AbstractSerializer class.
 """
 
-from pymongosql.serializer.api_type import (
+from pysqlcollection.serializer.api_type import (
     Select,
     Insert,
     Field,
