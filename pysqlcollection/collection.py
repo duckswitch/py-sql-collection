@@ -26,7 +26,11 @@ class Collection(object):
         self._connection = connection
         self._database_name = database_name
         self.table_name = table_name
-
+    
+    def __getattr__(self, name):
+        if name not in self.__dict__:
+            self.discover_columns()
+            
     def discover_columns(self, table_name=None):
         """
         Load the columns of the table.
