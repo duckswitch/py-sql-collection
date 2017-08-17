@@ -27,7 +27,11 @@ class Client(object):
         self._password = password
         self._driver = driver
         self.discover_databases()
-
+    
+    def __getattr__(self, name):
+        if name not in self.__dict__:
+            self.discover_databases()
+            
     def discover_databases(self):
         if self._driver == u"mysql":
             connection_chain = {
