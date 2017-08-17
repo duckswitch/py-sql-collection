@@ -108,7 +108,7 @@ class MySQLSerializer(AbstractSQLSerializer):
             limit_offset = u"LIMIT %s OFFSET %s"
             values += [select.limit, select.offset]
 
-        displayed = u", ".join([field.alias for field in select.fields if field.display])
+        displayed = u", ".join(["`{}`".format(field.alias) for field in select.fields if field.display])
 
         query = u"SELECT {} FROM ({}) AS A0 {} {} {}".format(displayed, query, where, sorts, limit_offset)
         return query, values
