@@ -85,7 +85,8 @@ class MySQLSerializer(AbstractSQLSerializer):
 
     def encode_select(self, select, with_limit_and_skip=True):
         values = []
-        fields = [u"{}.{} AS '{}'".format(field.table.name, field.column.name, field.alias) for field in select.fields if field.display]
+        fields = [u"{}.{} AS '{}'".format(field.table.name, field.column.name, field.alias) for field in select.fields]
+        
         table = u"{} {}".format(select.table.name, select.table.alias)
         joins = self.encode_joins(select.joins)
         
@@ -107,7 +108,9 @@ class MySQLSerializer(AbstractSQLSerializer):
             limit_offset = u"LIMIT %s OFFSET %s"
             values += [select.limit, select.offset]
 
-        query = u"SELECT * FROM ({}) AS A0 {} {} {}".format(query, where, sorts, limit_offset)
+        displayed = u", ".join([field.alias for field in select.fields if field.display])
+
+        query = u"SELECT {} FROM ({}) AS A0 {} {} {}".format(displayed, query, where, sorts, limit_offset)
         return query, values
 
     def get_relations(self, database_name, table_name):
