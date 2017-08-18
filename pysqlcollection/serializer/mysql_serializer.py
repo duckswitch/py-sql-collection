@@ -227,7 +227,7 @@ class MySQLSerializer(AbstractSQLSerializer):
         elif u"datetime" in row_type:
             typ = u"timestamp"
         else:
-            typ = u"string"
+            typ = u"text"
 
         return Column(
             name=row[0],
