@@ -51,17 +51,20 @@ class MySQLSerializer(AbstractSQLSerializer):
         values = []
         for filt in filters:
             result = None
+
             if isinstance(filt, Filter):
+                operator_value = u"REGEXP" if filt.operator.value == u"regex" else filt.operator.value
+
                 if is_select:
                     where.append(u"`{}` {} %s".format(
                         filt.field.alias,
-                        filt.operator.value
+                        operator_value
                     ))
                 else:
                     where.append(u"{}.{} {} %s".format(
                         filt.field.table.name,
                         filt.field.column.name,
-                        filt.operator.value
+                        operator_value
                     ))
                 values.append(filt.value)
             elif isinstance(filt, And):
@@ -73,11 +76,13 @@ class MySQLSerializer(AbstractSQLSerializer):
                 where += result[0]
                 values += result[1]
 
-        if is_root:
-            if len(where) > 0:
+        if len(where) > 0:
+            if is_root:
                 where = u" WHERE " + u" {} ".format(join_operator).join(where)
             else:
-                where = u""
+                return [u"(" + u" {} ".format(join_operator).join(where) + u")"], values
+        else:
+            where = u""
 
         return where, values
 

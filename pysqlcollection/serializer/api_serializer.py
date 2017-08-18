@@ -36,7 +36,8 @@ class ApiSerializer(object):
             u"$gt": u">",
             u"$gte": u">=",
             u"$lt": u"<",
-            u"$lte": u"<="
+            u"$lte": u"<=",
+            u"$regex": u"regex"
         }
         self._RECURSIVE_OPERATORS = {
             u"$and": And,
@@ -353,7 +354,12 @@ class ApiSerializer(object):
                         operator,
                         value=self.cast_value(field.column.type, value)
                     ))
-      
+
+                elif key in self._RECURSIVE_OPERATORS and isinstance(value, list):
+                    filters += [
+                        self.decode_query(value, fields, join_operator=self._RECURSIVE_OPERATORS[key])
+                    ]
+
         return join_operator(filters)
 
     def decode_update_set(self, update, fields):

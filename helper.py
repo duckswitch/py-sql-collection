@@ -12,34 +12,36 @@ description = hours_count.hour.get_description(auto_lookup=0)
 cursor = hours_count.hour.find(
     query={
         u"started_at": {
-            u"$lt": 1503088575
-        }
-    },
-    lookup=[
-        {
-            u"from": u"project",
-            u"localField": u"project",
-            u"foreignField": u"id"
-        }
-    ]
-).limit(1).skip(0).sort([(u"id", 1)])
+            u"$gt": 0
+        },
+        u"$or": [
+            {
+                u"issue": {
+                    u"$regex": u".*MEP.*"
+                }
+            }
+        ]
+    }
+).limit(5).skip(0).sort([(u"id", 1)])
 #
+
 for item in cursor:
     print(json.dumps(item, indent=4))
-#
-# cursor = hours_count.hour.find(
-#     projection={
-#         u"project.name": 1
-#     },
-#     auto_lookup=2
-# ).limit(1).skip(0)
-#
-# for item in cursor:
-#     print(json.dumps(item, indent=4))
-#
-#
-#
-#
+
+
+cursor = hours_count.hour.find(
+    projection={
+        u"project.name": 1
+    },
+    auto_lookup=2
+).limit(1).skip(0)
+
+for item in cursor:
+    print(json.dumps(item, indent=4))
+
+
+
+
 
 result = hours_count.hour.insert_one({
     u"started_at": 1503088575,
@@ -70,16 +72,16 @@ result = hours_count.project.update_many(query={}, update={
 ])
 
 #
-# #
-# result = hours_count.project.delete_many(query={
-#     u"banane.name": u"TEST 2"
-# }, lookup=[
-#     {
-#         u"from": u"client",
-#         u"localField": u"client",
-#         u"foreignField": u"id",
-#         u"as": u"banane"
-#     }
-# ])
-# #
-# print(result.deleted_count)
+#
+result = hours_count.project.delete_many(query={
+    u"banane.name": u"TEST 2"
+}, lookup=[
+    {
+        u"from": u"client",
+        u"localField": u"client",
+        u"foreignField": u"id",
+        u"as": u"banane"
+    }
+])
+#
+print(result.deleted_count)

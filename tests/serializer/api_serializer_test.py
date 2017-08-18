@@ -14,7 +14,8 @@ from pysqlcollection.serializer.api_type import (
     Table,
     Field,
     And,
-    Sort
+    Sort,
+    Or
 )
 from pysqlcollection.serializer.api_exception import (
     WrongParameter
@@ -195,6 +196,7 @@ def test_decode_query_equal(api_serializer, project_fields):
     assert root_and.filters[0].operator.value == u"="
     assert root_and. filters[0].value == u"test"
 
+
 def test_decode_query_custom_op(api_serializer, project_fields):
     """
     Test with $gte filter & joined field.
@@ -230,3 +232,44 @@ def test_decode_query_custom_op(api_serializer, project_fields):
     assert lte.operator.value == u"<="
     assert lte.field.alias == u"client.id"
     assert lte.value == 12
+
+def test_decode_query_and(api_serializer, project_fields):
+    """
+    Test with $gte filter & joined field.
+    """
+    # Order is important to don't break the tests.
+    filt = json.loads("""
+    {
+        "$or": [
+            {"client.id": 5},
+            {
+                "client.id": {
+                    "$gte": 12
+                }
+            }
+        ]
+    }
+    """, object_pairs_hook=OrderedDict)
+    root_and = api_serializer.decode_query(
+        filt,
+        project_fields
+    )
+    # Because it's a dict into a dict, another level is created.
+    # We expect this :
+    # And(
+    #   Or(
+    #       >= 5,
+    #       And(<= 12)
+    #   )
+    # )
+    assert len(root_and.filters) > 0 and isinstance(root_and.filters[0], Or)
+
+    client_id_eq = root_and.filters[0].filters[0]
+    assert client_id_eq.operator.value == u"="
+    assert client_id_eq.field.alias == u"client.id"
+    assert client_id_eq.value == 5
+
+    client_id_gte= root_and.filters[0].filters[1].filters[0]
+    assert client_id_gte.operator.value == u">="
+    assert client_id_gte.field.alias == u"client.id"
+    assert client_id_gte.value == 12
