@@ -11,7 +11,6 @@ from pysqlcollection.serializer.api_type import (
     Join,
     Update,
     Delete,
-    Value,
     Filter,
     Operator,
     Set,
@@ -19,6 +18,7 @@ from pysqlcollection.serializer.api_type import (
     And,
     Sort
 )
+from datetime import datetime
 from .api_exception import (
     WrongParameter,
     MissingField
@@ -306,7 +306,7 @@ class ApiSerializer(object):
 
                 if key == column.name:
                     insert.fields.append(Field(insert.table, column))
-                    insert.values.append(value)
+                    insert.values.append(self.cast_value(column.type, value))
                     found = True
                     break
 
@@ -314,6 +314,12 @@ class ApiSerializer(object):
                 raise MissingField(u"You must supply a value for field '{}'.".format(column.name))
 
         return insert
+
+    def cast_value(self, column_type, value):
+        if column_type in [u"timestamp"] and (isinstance(value, int) or isinstance(value, float)):
+            value = datetime.utcfromtimestamp(value)
+
+        return value
 
     def decode_query(self, query, fields, parent=None, join_operator=None):
         join_operator = join_operator or And
@@ -335,7 +341,7 @@ class ApiSerializer(object):
                         filters.append(Filter(
                             field,
                             operator,
-                            value=value
+                            value=self.cast_value(field.column.type, value)
                         ))
 
                 elif key in self._OPERATORS:
@@ -345,7 +351,7 @@ class ApiSerializer(object):
                     filters.append(Filter(
                         field,
                         operator,
-                        value=value
+                        value=self.cast_value(field.column.type, value)
                     ))
       
         return join_operator(filters)
@@ -360,7 +366,7 @@ class ApiSerializer(object):
                         field = fields[field_names.index(key)]
                         sets.append(Set(
                             field,
-                            value
+                            self.cast_value(field.column.type, value)
                         ))
 
         return sets
