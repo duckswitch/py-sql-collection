@@ -4,7 +4,10 @@ Implement MySQL Connection.
 """
 
 import MySQLdb
+from MySQLdb import IntegrityError
+from .sql_exception import IntegrityException
 from .abstract_connection import AbstractConnection
+
 
 class MySQLConnection(AbstractConnection):
     """
@@ -45,7 +48,10 @@ class MySQLConnection(AbstractConnection):
         sql_cursor = sql_connection.cursor()
 
         # Execute query
-        sql_cursor.execute(query, values)
+        try:
+            sql_cursor.execute(query, values)
+        except IntegrityError as e:
+            raise IntegrityException(message=e[1])
 
         if return_lastrowid:
             result = sql_cursor.lastrowid
@@ -55,7 +61,6 @@ class MySQLConnection(AbstractConnection):
             sql_cursor.connection.commit()
         else:
             result = sql_cursor.fetchall(), sql_cursor.description
-
 
         sql_cursor.close()
         sql_connection.close()

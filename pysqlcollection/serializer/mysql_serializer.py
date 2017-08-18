@@ -11,6 +11,8 @@ from .api_type import (
     Or,
     Filter
 )
+
+
 class MySQLSerializer(AbstractSQLSerializer):
     """
     Serialize MySQL requests.
@@ -51,7 +53,7 @@ class MySQLSerializer(AbstractSQLSerializer):
             result = None
             if isinstance(filt, Filter):
                 if is_select:
-                    where.append(u"{} {} %s".format(
+                    where.append(u"`{}` {} %s".format(
                         filt.field.alias,
                         filt.operator.value
                     ))
@@ -100,7 +102,7 @@ class MySQLSerializer(AbstractSQLSerializer):
             1: u"ASC",
             -1: u"DESC"
         }
-        sorts = u", ".join([u"{} {}".format(sort.field.alias, sort_bindings[sort.direction]) for sort in select.sorts])
+        sorts = u", ".join([u"`{}` {}".format(sort.field.alias, sort_bindings[sort.direction]) for sort in select.sorts])
         sorts = u"ORDER BY {}".format(sorts) if len(sorts) > 0 else sorts
         query = u"SELECT {} FROM {} {} ".format(u", ".join(fields), table, joins)
         limit_offset = u""
@@ -165,7 +167,8 @@ class MySQLSerializer(AbstractSQLSerializer):
 
         joins = self.encode_joins(delete.joins)
 
-        query = u"DELETE FROM {} {} {}".format(
+        query = u"DELETE {} FROM {} {} {}".format(
+            delete.table.name,
             delete.table.name,
             joins,
             where

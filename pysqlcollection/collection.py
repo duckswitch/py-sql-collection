@@ -123,16 +123,21 @@ class Collection(object):
 
         return Cursor(self._sql_serializer, self._api_serializer, self._connection, select)
 
-    def insert_one(self, document):
+    def insert_one(self, document, lookup=None, auto_lookup=0):
         """
         Inserts a document in the collection.
         Args:
             document (dict): The representation of the item to insert.
+            lookup (list of dict): The lookup to apply during this query.
+            auto_lookup (int): If we don't know what lookup we want, we let the lib to look
+                them for us. This can have consequences on optimization as it constructs
+                joins. Be careful.
         Return:
             (InsertResultOne): The representation of a insertion.
         """
 
-        insert = self._api_serializer.decode_insert_one(self.table_name, document)
+        lookup = self._proceed_lookup(lookup, auto_lookup)
+        insert = self._api_serializer.decode_insert_one(self.table_name, document, lookup)
         query, values = self._sql_serializer.encode_insert(insert)
 
         return InsertResultOne(

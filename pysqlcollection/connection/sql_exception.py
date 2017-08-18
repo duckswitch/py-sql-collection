@@ -3,7 +3,8 @@
 This file contains exceptions for the ApiSerializer Class
 """
 
-class ApiSerializerException(Exception):
+
+class DatabaseException(Exception):
     """
     Base exception for ApiSerializer class.
     """
@@ -25,30 +26,16 @@ class ApiSerializerException(Exception):
     def __str__(self):
         return repr(self.message)
 
-class WrongParameter(ApiSerializerException):
+
+class IntegrityException(DatabaseException):
     """
     Raise when the API meets a wrong parameter.
     """
-    def __init__(self, message, api_error_code=u"WRONG_PARAMETER", payload=None):
-        ApiSerializerException.__init__(
+    def __init__(self, message, api_error_code=u"INTEGRITY_ERROR", payload=None):
+        DatabaseException.__init__(
             self,
             message,
-            400,
+            422,
             api_error_code,
             payload
         )
-
-class MissingField(ApiSerializerException):
-    """
-    Raise when the API meets a missing parameter.
-    """
-    def __init__(self, message, api_error_code=u"MISSING_PARAMETER", payload=None):
-        ApiSerializerException.__init__(
-            self,
-            message,
-            400,
-            api_error_code,
-            payload
-        )
-
-
