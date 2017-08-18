@@ -105,12 +105,51 @@ class Collection(object):
 
         return lookup
 
+    def get_description(self, table_name=None, lookup=None, auto_lookup=0):
+        """
+        Get a description for the table corresponding to the columns.
+        Args:
+            table_name (unicode): The name of the table we want the description. If not specified, take the default one.
+            lookup (list of dict): The lookup to apply during this query.
+            auto_lookup (int): If we don't know what lookup we want, we let the lib to look
+                them for us. This can have consequences on optimization as it constructs
+                joins. Be careful.
+        Returns
+            (dict): The description.
+        """
+        table_name = table_name or self.table_name
+        lookup = self._proceed_lookup(lookup, auto_lookup)
+        columns = self._api_serializer.table_columns.get(table_name)
+        if columns is not None:
+            fields = []
+            for column in columns:
+                field = {
+                    u"extra": column.extra,
+                    u"key": column.key,
+                    u"name": column.name,
+                    u"required": column.required,
+                    u"type": column.type
+                }
+                if column.key == u"mul" and auto_lookup > 0:
+                    foreign_table = [
+                        item for item in lookup
+                        if item.get(u"localField") == column.name and item.get(u"to", self.table_name) == table_name
+                    ][0].get(u"from")
+                    field[u"nestedDescription"] = self.get_description(foreign_table, auto_lookup=auto_lookup-1)
+                fields.append(field)
+                    
+            return {
+                u"fields": fields
+            }
+        
+        return None
+
     def find(self, query=None, projection=None, lookup=None, auto_lookup=0):
         """
         Does a find query on the collection.
         Args:
             query (dict): The mongo like query to execute.
-            projection (dict): The projection parameter determines which fields are returned
+            projection (dict): The projection parameter determines which columns are returned
                 in the matching documents.
             lookup (list of dict): The lookup to apply during this query.
             auto_lookup (int): If we don't know what lookup we want, we let the lib to look
