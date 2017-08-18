@@ -404,7 +404,6 @@ class ApiSerializer(object):
         delete_stmt.fields = self.get_available_fields(delete_stmt.table)
 
         delete_stmt = self._decode_joins(delete_stmt, lookup)
-        print(delete_stmt.joins[0])
 
         delete_stmt.filters = self.decode_query(query, fields=delete_stmt.fields)
         return delete_stmt
