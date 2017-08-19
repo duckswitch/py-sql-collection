@@ -312,7 +312,7 @@ class ApiSerializer(object):
                     found = True
                     break
 
-            if not found and column.required and column.key != u"pri":
+            if not found and (column.required and column.extra != u"auto_increment"):
                 raise MissingField(u"You must supply a value for field '{}'.".format(column.name))
 
         return insert

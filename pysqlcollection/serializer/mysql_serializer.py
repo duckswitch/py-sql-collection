@@ -193,9 +193,9 @@ class MySQLSerializer(AbstractSQLSerializer):
         # Construct SETS
         sets = []
         for set_stmt in update.sets:
-            sets.append(u"SET {}.{} = %s".format(set_stmt.field.table.name, set_stmt.field.column.name))
+            sets.append(u"{}.{} = %s".format(set_stmt.field.table.name, set_stmt.field.column.name))
             values.append(set_stmt.value)
-        sets = u", ".join(sets)
+        sets = u"SET " + u", ".join(sets) if len(sets) > 0 else u""
 
         # Construct filters
         where, where_values = self.encode_filters(update.filters)

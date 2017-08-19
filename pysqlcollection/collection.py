@@ -183,7 +183,7 @@ class Collection(object):
             inserted_id=self._connection.execute(query, values, return_lastrowid=True)
         )
 
-    def update_many(self, query, update, options, lookup=None, auto_lookup=0):
+    def update_many(self, query, update, options=None, lookup=None, auto_lookup=0):
         """
         Updates many documents regarding the query / update passed in parameter.
         Args:

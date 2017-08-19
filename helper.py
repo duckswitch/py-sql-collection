@@ -7,6 +7,19 @@ from pysqlcollection.client import Client
 client = Client(host=u"127.0.0.1", user=u"root", password=u"localroot1234")
 
 hours_count = client.hours_count
+
+
+result = hours_count.client.update_many(query={
+    u"name": u"TETS"
+}, update={
+    u"$set": {
+        u"id": 666,
+        u"name": u"POUET"
+    }
+}, auto_lookup=3)
+
+quit()
+
 description = hours_count.hour.get_description(auto_lookup=3)
 
 
