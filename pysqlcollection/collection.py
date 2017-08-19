@@ -74,7 +74,7 @@ class Collection(object):
                     u"from": relation[2],
                     u"localField": relation[1],
                     u"foreignField": relation[3],
-                    u"as": u".".join(prefix + [relation[2]])
+                    u"as": u".".join(prefix + [relation[1]])
                 }
                 if deep > 0:
                     item[u"to"] = relation[0]

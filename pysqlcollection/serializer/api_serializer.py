@@ -278,18 +278,19 @@ class ApiSerializer(object):
                 splitted = key.split(u".")
                 if len(splitted) > 1:
                     for look in lookup:
-                        if look.get(u"from") == splitted[0] and look.get(u"foreignField") == splitted[1]:
+
+                        if look.get(u"as") == splitted[0] and look.get(u"foreignField") == splitted[1]:
                             del document[key]
                             document[look.get(u"localField")] = value
                             break
 
         for column in insert.table.columns:
-
             found = False
 
             for key, value in document.items():
 
                 if key == column.name:
+
                     insert.fields.append(Field(insert.table, column))
                     insert.values.append(self.cast_value(column.type, value))
                     found = True
