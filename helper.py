@@ -7,7 +7,8 @@ from pysqlcollection.client import Client
 client = Client(host=u"127.0.0.1", user=u"root", password=u"localroot1234")
 
 hours_count = client.hours_count
-description = hours_count.hour.get_description(auto_lookup=0)
+description = hours_count.hour.get_description(auto_lookup=3)
+
 
 cursor = hours_count.hour.find(
     query={

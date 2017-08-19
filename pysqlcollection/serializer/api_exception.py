@@ -52,3 +52,17 @@ class MissingField(ApiSerializerException):
         )
 
 
+class BadRequest(ApiSerializerException):
+    """
+    Raise when the API meets a missing parameter.
+    """
+    def __init__(self, message, api_error_code=u"FORBIDDEN_OPERATION", payload=None):
+        ApiSerializerException.__init__(
+            self,
+            message,
+            400,
+            api_error_code,
+            payload
+        )
+
+

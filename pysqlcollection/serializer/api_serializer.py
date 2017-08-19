@@ -21,7 +21,8 @@ from pysqlcollection.serializer.api_type import (
 from datetime import datetime
 from .api_exception import (
     WrongParameter,
-    MissingField
+    MissingField,
+    BadRequest
 )
 
 class ApiSerializer(object):
@@ -387,6 +388,9 @@ class ApiSerializer(object):
 
         update_stmt.sets = self.decode_update_set(update, update_stmt.fields)
         update_stmt.filters = self.decode_query(query, fields=update_stmt.fields)
+        if len(update_stmt.filters.filters) == 0:
+            raise BadRequest(u"You need to supply at least one filter.")
+
 
         return update_stmt
 
@@ -418,6 +422,9 @@ class ApiSerializer(object):
         delete_stmt = self._decode_joins(delete_stmt, lookup)
 
         delete_stmt.filters = self.decode_query(query, fields=delete_stmt.fields)
+        if len(delete_stmt.filters.filters) == 0:
+            raise BadRequest(u"You need to supply at least one filter.")
+
         return delete_stmt
 
     def json_to_one_level(self, obj, parent=None):
