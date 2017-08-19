@@ -9,33 +9,23 @@ client = Client(host=u"127.0.0.1", user=u"root", password=u"localroot1234")
 hours_count = client.hours_count
 
 
-result = hours_count.client.update_many(query={
-    u"name": u"TETS"
+result = hours_count.project.update_many(query={
+    u"name": u"TEST2"
 }, update={
     u"$set": {
-        u"id": 666,
-        u"name": u"POUET"
+        u"client": {
+            u"id": 1,
+            u"name": u"Kiloutou"
+        }
     }
 }, auto_lookup=3)
-
-quit()
 
 description = hours_count.hour.get_description(auto_lookup=3)
 
 
 cursor = hours_count.hour.find(
-    query={
-        u"started_at": {
-            u"$gt": 0
-        },
-        u"$or": [
-            {
-                u"issue": {
-                    u"$regex": u".*MEP.*"
-                }
-            }
-        ]
-    }
+    query={},
+    auto_lookup=2
 ).limit(5).skip(0).sort([(u"id", 1)])
 #
 
@@ -69,7 +59,9 @@ result = hours_count.hour.insert_one({
 #
 # print(result.inserted_id)
 #
-result = hours_count.project.update_many(query={}, update={
+result = hours_count.project.update_many(query={
+    u"id": 1
+}, update={
     u"$set": {
         u"started_at": 1503088575
     }

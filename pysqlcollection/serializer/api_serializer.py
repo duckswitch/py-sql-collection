@@ -184,7 +184,6 @@ class ApiSerializer(object):
         fields = []
         for column in table.columns:
             field = self.generate_field(table, column.name, prefix)
-            ignore = False
 
             if field.alias not in to_ignore:
                 fields.append(field)
@@ -235,23 +234,7 @@ class ApiSerializer(object):
 
         return fields
 
-    def _merge_fields(self, fields, to_merge):
-        output = []
-        for field in fields:
-            merged = False
-            for index, field_to_merge in enumerate(to_merge):
 
-                if field_to_merge.alias.startswith(field.alias):
-
-                    output.append(to_merge[index])
-                    del to_merge[index]
-                    merged = True
-                    break
-
-            if not merged:
-                output.append(field)
-
-        return output + to_merge
 
 
 
@@ -363,18 +346,20 @@ class ApiSerializer(object):
 
         return join_operator(filters)
 
-    def decode_update_set(self, update, fields):
+    def decode_update_set(self, table, update, fields):
         field_names = [field.alias for field in fields]
         sets = []
         for key in update:
             if key == u"$set":
+                update[key] = self.json_to_one_level(update[key])
                 for key, value in update[key].items():
                     if key in field_names:
                         field = fields[field_names.index(key)]
-                        sets.append(Set(
-                            field,
-                            self.cast_value(field.column.type, value)
-                        ))
+                        if field.table.name == table.name:
+                            sets.append(Set(
+                                field,
+                                self.cast_value(field.column.type, value)
+                            ))
 
         return sets
 
@@ -386,7 +371,7 @@ class ApiSerializer(object):
 
         update_stmt = self._decode_joins(update_stmt, lookup)
 
-        update_stmt.sets = self.decode_update_set(update, update_stmt.fields)
+        update_stmt.sets = self.decode_update_set(update_stmt.table, update, update_stmt.fields)
         update_stmt.filters = self.decode_query(query, fields=update_stmt.fields)
         if len(update_stmt.filters.filters) == 0:
             raise BadRequest(u"You need to supply at least one filter.")
@@ -394,8 +379,26 @@ class ApiSerializer(object):
 
         return update_stmt
 
-    def _decode_joins(self, statement, lookup):
+    def _merge_fields(self, fields, to_merge):
+        output = []
+        for field in fields:
+            merged = False
+            for index, field_to_merge in enumerate(to_merge):
 
+                if field_to_merge.alias.startswith(field.alias):
+
+                    output.append(to_merge[index])
+                    del to_merge[index]
+                    merged = True
+                    break
+
+            if not merged:
+                output.append(field)
+
+        output = output + to_merge
+        return output + to_merge
+
+    def _decode_joins(self, statement, lookup):
         join_tables = []
         if lookup:
             statement.joins = self.decode_lookup(statement.table, lookup)
@@ -409,7 +412,24 @@ class ApiSerializer(object):
             ]
 
         for prefix, table in join_tables:
-            statement.fields = self._merge_fields(statement.fields, self.get_available_fields(table, prefix))
+            statement.fields += self.get_available_fields(table, prefix)
+
+        # Merging lookups :
+        # In a relation, for the joining field, we have two fields for a same value. The objective
+        # is to keep the one from the table which is joined to keep update requests working and make it
+        # look like it's the foreign one (for the SELECT). In an update, we SET the field from the base table,
+        # not the foreign one that's why.
+        for look in lookup:
+            index_to_replace = None
+            index_to_delete = None
+            for index, field in enumerate(statement.fields):
+                if field.alias == u"{}.{}".format(look.get(u"as"), look.get(u"foreignField")):
+                    index_to_delete = index
+                elif field.column.name == look.get(u"localField") and field.table.name == look.get(u"to", statement.table.name):
+                    index_to_replace = index
+
+            statement.fields[index_to_replace].alias = statement.fields[index_to_delete].alias
+            del statement.fields[index_to_delete]
 
         return statement
 
