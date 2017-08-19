@@ -130,12 +130,13 @@ class Collection(object):
                     u"required": column.required,
                     u"type": column.type
                 }
-                if column.key == u"mul" and auto_lookup > 0:
+                if column.key == u"mul" and len(lookup) > 0:
                     foreign_table = [
                         item for item in lookup
                         if item.get(u"localField") == column.name and item.get(u"to", self.table_name) == table_name
-                    ][0].get(u"from")
-                    field[u"nested_description"] = self.get_description(foreign_table, auto_lookup=auto_lookup-1)
+                    ][0]
+                    field[u"as"] = foreign_table.get(u"as")
+                    field[u"nested_description"] = self.get_description(foreign_table.get(u"from"), auto_lookup=auto_lookup-1)
                 fields.append(field)
                     
             return {
