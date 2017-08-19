@@ -135,7 +135,7 @@ class Collection(object):
                         item for item in lookup
                         if item.get(u"localField") == column.name and item.get(u"to", self.table_name) == table_name
                     ][0].get(u"from")
-                    field[u"nestedDescription"] = self.get_description(foreign_table, auto_lookup=auto_lookup-1)
+                    field[u"nested_description"] = self.get_description(foreign_table, auto_lookup=auto_lookup-1)
                 fields.append(field)
                     
             return {
