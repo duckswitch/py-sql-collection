@@ -139,7 +139,8 @@ class Collection(object):
                 fields.append(field)
                     
             return {
-                u"fields": fields
+                u"fields": fields,
+                u"table": table_name
             }
         
         return None
