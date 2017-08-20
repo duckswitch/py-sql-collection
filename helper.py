@@ -8,7 +8,6 @@ client = Client(host=u"127.0.0.1", user=u"root", password=u"localroot1234")
 
 hours_count = client.hours_count
 
-
 description = hours_count.project.get_description(lookup=[
     {
         u"from": u"client",

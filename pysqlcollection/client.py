@@ -28,13 +28,15 @@ class Client(object):
         self._user = user
         self._password = password
         self._driver = driver
-        self.discover_databases()
     
     def __getattr__(self, name):
         if name not in self.__dict__:
-            self.discover_databases()
+            self.discover_databases(name)
+
+        return self.__dict__[name]
             
-    def discover_databases(self):
+    def discover_databases(self, database_name=None):
+
         if self._driver == u"mysql":
             connection_chain = {
                 u"host": self._host,
@@ -47,12 +49,17 @@ class Client(object):
             api_serializer = ApiSerializer()
             sql_serializer = MySQLSerializer()
 
-            databases, _ = connection.execute(*sql_serializer.get_databases())
+            if not database_name:
+                databases, _ = connection.execute(*sql_serializer.get_databases())
+                databases = [database[0] for database in databases]
+            else:
+                databases = [database_name]
 
-            for database in databases:
+            for database_name in databases:
                 connection_chain = connection_chain.copy()
-                connection_chain[u"database"] = database[0]
-                setattr(self, database[0], DB(
+                connection_chain[u"database"] = database_name
+                print(u"SET ATTR")
+                setattr(self, database_name, DB(
                     api_serializer=api_serializer,
                     sql_serializer=sql_serializer,
                     connection=MySQLConnection(**connection_chain)
