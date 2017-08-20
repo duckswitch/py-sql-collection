@@ -21,11 +21,15 @@ class MySQLConnection(AbstractConnection):
             (object): The DB Connection.
         """
         kwargs = {
-            u"host": self._host,
             u"user": self._user,
             u"passwd": self._password,
             u"charset": u"utf8"
         }
+        if self._host:
+            kwargs[u"host"] = self._host
+        else:
+            kwargs[u"unix_socket"] = self._unix_socket
+
         if self._database:
             kwargs[u"db"] = self._database
 

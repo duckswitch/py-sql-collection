@@ -14,11 +14,13 @@ class AbstractConnection(object):
             self,
             user,
             password,
-            host,
+            host=None,
+            unix_socket=None,
             database=None,
     ):
 
         self._host = host
+        self._unix_socket = unix_socket
         self._user = user
         self._password = password
         self._database = database

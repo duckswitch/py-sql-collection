@@ -16,13 +16,15 @@ class Client(object):
 
     def __init__(
             self,
-            host,
             user,
             password,
+            host=None,
+            unix_socket=None,
             driver=u"mysql"
     ):
 
         self._host = host
+        self._unix_socket = unix_socket
         self._user = user
         self._password = password
         self._driver = driver
@@ -36,6 +38,7 @@ class Client(object):
         if self._driver == u"mysql":
             connection_chain = {
                 u"host": self._host,
+                u"unix_socket": self._unix_socket,
                 u"user": self._user,
                 u"password": self._password
             }
