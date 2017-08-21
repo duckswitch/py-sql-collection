@@ -113,14 +113,14 @@ class Join(object):
         self.as_alias = as_alias
 
     def __str__(self):
-        return u"Join({} {} TO {} {} ON {}.{} = {}.{})".format(
+        return u"Join({} `{}` TO {} `{}` ON `{}`.{} = `{}`.{})".format(
             self.from_table.name,
             self.from_table.alias,
             self.to_table.name,
             self.to_table.alias,
-            self.from_table.name,
+            self.from_table.alias,
             self.from_field.column.name,
-            self.to_table.name,
+            self.to_table.alias,
             self.to_field.column.name
         )
 

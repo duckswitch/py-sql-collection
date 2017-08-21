@@ -30,17 +30,17 @@ class MySQLSerializer(AbstractSQLSerializer):
 
     def encode_joins(self, joins):
         output = [
-            u"{} {} ON {}.{} = {}.{}".format(
+            u"{} `{}` ON `{}`.{} = `{}`.{}".format(
                 join.to_table.name,
                 join.to_table.alias,
-                join.from_table.name,
+                join.from_table.alias,
                 join.from_field.column.name,
-                join.to_table.name,
+                join.to_table.alias,
                 join.to_field.column.name
             )
             for join in joins
             ]
-        output = u"JOIN " + u" JOIN ".join(output) if len(output) > 0 else u""
+        output = u"LEFT JOIN " + u" LEFT JOIN ".join(output) if len(output) > 0 else u""
         return output
 
     def encode_filters(self, filters, join_operator=None, is_root=True, is_select=False):
@@ -61,8 +61,8 @@ class MySQLSerializer(AbstractSQLSerializer):
                         operator_value
                     ))
                 else:
-                    where.append(u"{}.{} {} %s".format(
-                        filt.field.table.name,
+                    where.append(u"`{}`.{} {} %s".format(
+                        filt.field.table.alias,
                         filt.field.column.name,
                         operator_value
                     ))
@@ -92,15 +92,18 @@ class MySQLSerializer(AbstractSQLSerializer):
 
     def encode_select(self, select, with_limit_and_skip=True):
         values = []
-        fields = [u"{}.{} AS '{}'".format(field.table.name, field.column.name, field.alias) for field in select.fields]
-        
+        fields = [
+            u"`{}`.{} AS '{}'".format(
+                field.table.alias, field.column.name, field.alias
+            ) for field in select.fields]
+
         table = u"{} {}".format(select.table.name, select.table.alias)
         joins = self.encode_joins(select.joins)
-        
+
+        #
         # Construct filters
         where, where_values = self.encode_filters(select.filters, is_select=True)
         values += where_values
-        
 
         # Construct sort
         sort_bindings = {
@@ -116,8 +119,9 @@ class MySQLSerializer(AbstractSQLSerializer):
             values += [select.limit, select.offset]
 
         displayed = u", ".join([u"`{}`".format(field.alias) for field in select.fields if field.display])
-
+        #
         query = u"SELECT {} FROM ({}) AS A0 {} {} {}".format(displayed, query, where, sorts, limit_offset)
+
         return query, values
 
     def get_relations(self, database_name, table_name):
@@ -179,6 +183,7 @@ class MySQLSerializer(AbstractSQLSerializer):
             where
         )
 
+        print(query)
         return query, values
 
     def encode_update_many(self, update):
@@ -209,6 +214,7 @@ class MySQLSerializer(AbstractSQLSerializer):
             sets,
             where
         )
+        print(query)
         return query, values
 
     def interpret_db_column(self, row):

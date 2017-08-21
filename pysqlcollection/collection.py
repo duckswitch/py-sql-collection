@@ -3,6 +3,7 @@
 This file contains Collection class.
 """
 
+import json
 from .cursor import Cursor
 from .serializer.api_type import InsertResultOne, UpdateResult, DeleteResult
 
@@ -63,12 +64,11 @@ class Collection(object):
             prefix = prefix.split(u".") if prefix else []
 
             if deep > 0:
-                prefix = [table_name]
+                prefix = prefix + [table_name]
 
             relations, _ = self._connection.execute(
                 *self._sql_serializer.get_relations(self._database_name, table_name)
             )
-
             for relation in relations:
                 item = {
                     u"from": relation[2],
@@ -78,6 +78,8 @@ class Collection(object):
                 }
                 if deep > 0:
                     item[u"to"] = relation[0]
+                else:
+                    item[u"to"] = self.table_name
 
                 lookup.append(item)
 
@@ -96,8 +98,6 @@ class Collection(object):
         if lookup is not None:
             potential_tables += [
                 item[u"from"] for item in lookup
-            ] + [
-                item[u"to"] for item in lookup if u"to" in item
             ]
 
         for table in potential_tables:

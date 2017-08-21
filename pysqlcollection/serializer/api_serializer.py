@@ -3,6 +3,7 @@
 This file contains AbstractSerializer class.
 """
 
+import json
 from pysqlcollection.serializer.api_type import (
     Select,
     Insert,
@@ -191,32 +192,6 @@ class ApiSerializer(object):
         return fields
 
 
-    def decode_lookup(self, table, lookup):
-        """
-        Test decode lookup.
-        Args:
-            table (Table): The table where we look for joins.
-            lookup (dict): The lookup representation as given to the methods.
-        Returns:
-            (list of Join): Joins representations resulting.
-        """
-        joins = []
-        for item in lookup:
-            from_table = table if u"to" not in item else self.generate_table(
-                table_name=item[u"to"],
-                alias=item[u"to"]
-            )
-            to_table = self.generate_table(table_name=item[u"from"])
-            joins.append(Join(
-                from_table,
-                to_table,
-                from_field=self.generate_field(from_table, field_name=item[u"localField"]),
-                to_field=self.generate_field(to_table, field_name=item[u"foreignField"]),
-                as_alias=item.get(u"as", item[u"from"])
-            ))
-
-        return joins
-
     def decode_projection(self, fields, projection):
         mode = None
         for key, value in projection.items():
@@ -399,38 +374,79 @@ class ApiSerializer(object):
         output = output + to_merge
         return output + to_merge
 
+    def decode_lookup(self, table, lookup):
+        """
+        Test decode lookup.
+        Args:
+            table (Table): The table where we look for joins.
+            lookup (dict): The lookup representation as given to the methods.
+        Returns:
+            (list of Join): Joins representations resulting.
+        """
+        joins = []
+        for look in lookup:
+            try:
+                from_table = self.generate_table(look.get(u"to"), alias=look.get(u"to"))
+            except KeyError:
+                # To is not a table. Look for "As" in lookup to get the table.
+                item = [item for item in lookup if item.get(u"as") == look.get(u"to")][0]
+                from_table = self.generate_table(item.get(u"from"), alias=look.get(u"to"))
+
+            to_table = self.generate_table(look.get(u"from"), look.get(u"as"))
+
+            join_tables = [from_table, to_table]
+            for index, join_table in enumerate(join_tables):
+                if join_table.name == table.name:
+                    join_tables[index].is_root_table = True
+
+            joins.append(Join(
+                from_table=from_table,
+                to_table=to_table,
+                from_field=self.generate_field(from_table, field_name=look[u"localField"]),
+                to_field=self.generate_field(to_table, field_name=look[u"foreignField"]),
+                as_alias=look.get(u"as", look[u"from"])
+            ))
+
+        return joins
+
     def _decode_joins(self, statement, lookup):
         join_tables = []
         if lookup:
             statement.joins = self.decode_lookup(statement.table, lookup)
 
+        to_replace = []
         for join in statement.joins:
-            table_names = [table[1].name for table in join_tables] + [statement.table.name]
+            table_aliases = [table[1].alias for table in join_tables] + [statement.table.name]
             join_tables += [
                 (join.as_alias, table) for table in [
                     join.from_table, join.to_table
-                ] if table.name not in table_names
+                ] if table.alias not in table_aliases
             ]
+            to_replace += [(join.from_field.alias, join.to_field.alias)]
 
         for prefix, table in join_tables:
             statement.fields += self.get_available_fields(table, prefix)
 
-        # Merging lookups :
-        # In a relation, for the joining field, we have two fields for a same value. The objective
-        # is to keep the one from the table which is joined to keep update requests working and make it
-        # look like it's the foreign one (for the SELECT). In an update, we SET the field from the base table,
-        # not the foreign one that's why.
-        for look in lookup:
+        for (alias_to_replace, replacement_alias) in to_replace:
+
             index_to_replace = None
             index_to_delete = None
-            for index, field in enumerate(statement.fields):
-                if field.alias == u"{}.{}".format(look.get(u"as"), look.get(u"foreignField")):
-                    index_to_delete = index
-                elif field.column.name == look.get(u"localField") and field.table.name == look.get(u"to", statement.table.name):
+
+            for index, field in reversed(list(enumerate(statement.fields))):
+                if field.alias == alias_to_replace:
                     index_to_replace = index
+                elif field.alias == replacement_alias:
+                    index_to_delete = index
+                if index_to_replace and index_to_delete:
+                    break
 
             statement.fields[index_to_replace].alias = statement.fields[index_to_delete].alias
             del statement.fields[index_to_delete]
+        #
+        # print(json.dumps([
+        #     u"{} ({}.{})".format(field.alias, field.table.name, field.column.name)
+        #     for field in statement.fields
+        # ], indent=4))
 
         return statement
 

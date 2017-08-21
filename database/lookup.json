@@ -1,0 +1,44 @@
+[
+  {
+    "to": "task",
+    "localField": "project_id",
+
+    "from": "project",
+    "foreignField": "id",
+
+    "as": "project_id"
+
+  },{
+    "to": "project_id",
+    "localField": "project_manager_user_id",
+
+    "from": "user",
+    "foreignField": "id",
+
+    "as": "project_id.project_manager_user_id"
+  },{
+    "to": "project_id",
+    "localField": "developer_user_id",
+
+    "from": "user",
+    "foreignField": "id",
+
+    "as": "project_id.developer_user_id"
+  },{
+    "to": "project_id",
+    "localField": "client_id",
+
+    "from": "client",
+    "foreignField": "id",
+
+    "as": "project_id.client_id"
+  },{
+    "to": "task",
+    "localField": "affected_user_id",
+
+    "from": "user",
+    "foreignField": "id",
+
+    "as": "affected_user_id"
+  }
+]

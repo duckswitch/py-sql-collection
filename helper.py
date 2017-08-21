@@ -3,117 +3,106 @@
 import json
 from pysqlcollection.client import Client
 
-
 client = Client(host=u"127.0.0.1", user=u"root", password=u"localroot1234")
 
-hours_count = client.hours_count
+sql_collection_test = client.sql_collection_test
 
-description = hours_count.project.get_description(lookup=[
+
+LOOKUP = [
     {
-        u"from": u"client",
-        u"localField": u"client",
+        u"to": u"task",
+        u"localField": u"project_id",
+
+        u"from": u"project",
         u"foreignField": u"id",
-        u"as": u"banane"
+
+        u"as": u"project_id"
+
+    },
+    {
+        u"to": u"project_id",
+        u"localField": u"project_manager_user_id",
+
+        u"from": u"user",
+        u"foreignField": u"id",
+
+        u"as": u"project_id.project_manager_user_id"
+    }, {
+        u"to": u"project_id",
+        u"localField": u"developer_user_id",
+
+        u"from": u"user",
+        u"foreignField": u"id",
+
+        u"as": u"project_id.developer_user_id"
+    }, {
+        u"to": u"project_id",
+        u"localField": u"client_id",
+
+        u"from": u"client",
+        u"foreignField": u"id",
+
+        u"as": u"project_id.client_id"
+    }, {
+        u"to": u"task",
+        u"localField": u"affected_user_id",
+
+        u"from": u"user",
+        u"foreignField": u"id",
+
+        u"as": u"affected_user_id"
     }
-])
-cursor = hours_count.hour.find(
+]
+
+
+# INSERT example
+sql_collection_test.task.insert_one({
+    u"name": u"Making coffee",
+    u"project_id": {
+        u"id": 1
+    },
+    u"affected_user_id": {
+        u"id": 1
+    }
+}, lookup=LOOKUP)
+
+# LIST example
+cursor = sql_collection_test.task.find(
     query={
-        "affected_to.email": u"admin@myapp.net"
+        u"$or": [
+            {u"affected_user_id.id": 1},
+            {u"affected_user_id.id": 2}
+        ]
     },
-    auto_lookup=2
-).limit(5).skip(0).sort([(u"id", 1)])
-#
+    projection={u"project_id.project_manager_user_id.name": -1}, lookup=LOOKUP
+).limit(10).skip(0).sort([(u"affected_user_id.id", -1)])
 
 for item in cursor:
     print(json.dumps(item, indent=4))
 
+# UPDATE example
 
-result = hours_count.hour.insert_one({
-  "affected_to": {
-    "email": "admin@myapp.net",
-    "id": 22,
-    "name": "Admin"
-  },
-  "comments": None,
-  "issue": "",
-  "minutes": 0,
-  "project": {
-    "client": {
-      "id": 4,
-      "name": "Valeo"
-    },
-    "code": None,
-    "id": 4,
-    "name": "Is people efficiency",
-    "provisioned_hours": 240,
-    "started_at": 1503088575
-  },
-  "started_at": 1503175288
-}, auto_lookup=1)
-
-
-result = hours_count.project.update_many(query={
-    u"name": u"TEST2"
-}, update={
-    u"$set": {
-        u"client": {
-            u"id": 1,
-            u"name": u"Kiloutou"
+cursor = sql_collection_test.task.update_many(
+    query={
+        u"name": u"Making coffee",
+        u"project_id.project_manager_user_id.id": 2,
+        u"project_id.client_id.id": 1
+    },update={
+        u"$set": {
+            u"name": u"Not making coffee",
+            u"project_id.id": 2
         }
-    }
-}, auto_lookup=3)
-
-
-
-
-
-cursor = hours_count.hour.find(
-    projection={
-        u"project.name": 1
     },
-    auto_lookup=2
-).limit(1).skip(0)
+    lookup=LOOKUP
+)
 
-for item in cursor:
-    print(json.dumps(item, indent=4))
+# DELETE example
+cursor = sql_collection_test.task.delete_many(
+    query={
+        u"name": u"Not making coffee",
+        u"project_id.id": 2,
+        u"affected_user_id.id": 1
+    },
+    lookup=LOOKUP
+)
 
-
-
-
-
-
-#
-# print(result.inserted_id)
-#
-result = hours_count.project.update_many(query={
-    u"id": 1
-}, update={
-    u"$set": {
-        u"started_at": 1503088575
-    }
-}, options={
-    u"upsert": False,
-    u"multi": False
-}, lookup=[
-    {
-        u"from": u"client",
-        u"localField": u"client",
-        u"foreignField": u"id",
-        u"as": u"banane"
-    }
-])
-
-#
-#
-result = hours_count.project.delete_many(query={
-    u"banane.name": u"TEST 2"
-}, lookup=[
-    {
-        u"from": u"client",
-        u"localField": u"client",
-        u"foreignField": u"id",
-        u"as": u"banane"
-    }
-])
-#
-print(result.deleted_count)
