@@ -48,45 +48,61 @@ class Collection(object):
                 for db_column in result
             ]
 
-    def _auto_lookup(self, table_name=None, prefix=None, deep=0, max_deep=2):
+    def _auto_lookup(self, table_name=None, deep=0, max_deep=2, parent_lookup=None):
         """
         Autolookup method. Construct a list of lookup.
         Args:
             table_name (unicode): The name of the concerned table.
-            prefix (unicode): A prefix to add to the lookup when we go deep in relations.
             deep (int): How deep we are in the lookup.
             max_deep (int): Recursive call count before we stop digging.
         """
+        parent_lookup = parent_lookup or []
         lookup = []
         if deep < max_deep:
 
             table_name = table_name or self.table_name
-            prefix = prefix.split(u".") if prefix else []
+            to = table_name
 
-            if deep > 0:
-                prefix = prefix + [table_name]
+            for parent_look in parent_lookup:
+                if parent_look.get(u"as") == table_name:
+                    to = table_name
+                    table_name = parent_look.get(u"from")
+                    break
 
             relations, _ = self._connection.execute(
                 *self._sql_serializer.get_relations(self._database_name, table_name)
             )
+
+
             for relation in relations:
+
                 item = {
-                    u"from": relation[2],
+                    u"to": to,
                     u"localField": relation[1],
-                    u"foreignField": relation[3],
-                    u"as": u".".join(prefix + [relation[1]])
+
+                    u"from": relation[2],
+                    u"foreignField": relation[3]
+
+
                 }
                 if deep > 0:
-                    item[u"to"] = relation[0]
+                    item[u"as"] = u".".join([to] + [relation[1]])
                 else:
-                    item[u"to"] = self.table_name
+                    item[u"as"] = u".".join([relation[1]])
 
                 lookup.append(item)
 
+            new_lookup = []
             for item in lookup:
-                lookup += self._auto_lookup(
-                    item.get(u"from"), u".".join(prefix), deep=deep+1, max_deep=max_deep
+
+                new_lookup += self._auto_lookup(
+                    item.get(u"as"),
+                    deep=deep+1,
+                    max_deep=max_deep,
+                    parent_lookup=lookup
                 )
+
+            lookup += new_lookup
 
         return lookup
 

@@ -7,52 +7,69 @@ client = Client(host=u"127.0.0.1", user=u"root", password=u"localroot1234")
 
 sql_collection_test = client.sql_collection_test
 
-
 LOOKUP = [
-    {
-        u"to": u"task",
-        u"localField": u"project_id",
+  {
+    "to": "task",
+    "localField": "project_id",
 
-        u"from": u"project",
-        u"foreignField": u"id",
+    "from": "project",
+    "foreignField": "id",
 
-        u"as": u"project_id"
+    "as": "project_id"
 
-    },
-    {
-        u"to": u"project_id",
-        u"localField": u"project_manager_user_id",
+  },{
+    "to": "project_id",
+    "localField": "project_manager_user_id",
 
-        u"from": u"user",
-        u"foreignField": u"id",
+    "from": "user",
+    "foreignField": "id",
 
-        u"as": u"project_id.project_manager_user_id"
-    }, {
-        u"to": u"project_id",
-        u"localField": u"developer_user_id",
+    "as": "project_id.project_manager_user_id"
+  },{
+    "to": "project_id",
+    "localField": "developer_user_id",
 
-        u"from": u"user",
-        u"foreignField": u"id",
+    "from": "user",
+    "foreignField": "id",
 
-        u"as": u"project_id.developer_user_id"
-    }, {
-        u"to": u"project_id",
-        u"localField": u"client_id",
+    "as": "project_id.developer_user_id"
+  },{
+    "to": "project_id",
+    "localField": "client_id",
 
-        u"from": u"client",
-        u"foreignField": u"id",
+    "from": "client",
+    "foreignField": "id",
 
-        u"as": u"project_id.client_id"
-    }, {
-        u"to": u"task",
-        u"localField": u"affected_user_id",
+    "as": "project_id.client_id"
+  },{
+    "to": "project_id.client_id",
+    "localField": "country_id",
 
-        u"from": u"user",
-        u"foreignField": u"id",
+    "from": "country",
+    "foreignField": "id",
 
-        u"as": u"affected_user_id"
-    }
+    "as": "project_id.client_id.country_id"
+  },{
+    "to": "task",
+    "localField": "affected_user_id",
+
+    "from": "user",
+    "foreignField": "id",
+
+    "as": "affected_user_id"
+  }
 ]
+
+# TEST AUTO LOOKUP
+
+auto_lookup = sql_collection_test.task._auto_lookup(max_deep=3)
+
+
+print(json.dumps(auto_lookup, indent=4))
+
+cursor = sql_collection_test.task.find(lookup=auto_lookup)
+for item in cursor:
+    print(json.dumps(item, indent=4))
 
 
 # INSERT example
@@ -65,6 +82,7 @@ sql_collection_test.task.insert_one({
         u"id": 1
     }
 }, lookup=LOOKUP)
+
 
 # LIST example
 cursor = sql_collection_test.task.find(

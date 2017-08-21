@@ -58,7 +58,6 @@ class Client(object):
             for database_name in databases:
                 connection_chain = connection_chain.copy()
                 connection_chain[u"database"] = database_name
-                print(u"SET ATTR")
                 setattr(self, database_name, DB(
                     api_serializer=api_serializer,
                     sql_serializer=sql_serializer,

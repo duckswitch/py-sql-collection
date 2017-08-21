@@ -63,7 +63,7 @@ class MySQLConnection(AbstractConnection):
             result = sql_cursor.rowcount
             sql_cursor.connection.commit()
         else:
-            result = sql_cursor.fetchall(), sql_cursor.description
+            result = list(sql_cursor.fetchall()), sql_cursor.description
 
         sql_cursor.close()
         sql_connection.close()

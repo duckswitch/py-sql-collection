@@ -33,6 +33,14 @@
 
     "as": "project_id.client_id"
   },{
+    "to": "project_id.client_id",
+    "localField": "country_id",
+
+    "from": "country",
+    "foreignField": "id",
+
+    "as": "project_id.client_id.country_id"
+  },{
     "to": "task",
     "localField": "affected_user_id",
 

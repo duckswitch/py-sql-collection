@@ -95,7 +95,6 @@ class ApiSerializer(object):
         statement.sorts = sorts
         return statement
 
-
     def decode_skip(self, statement, skip):
         """
         Add a skip to a Select statement.
@@ -422,10 +421,12 @@ class ApiSerializer(object):
                     join.from_table, join.to_table
                 ] if table.alias not in table_aliases
             ]
+
             to_replace += [(join.from_field.alias, join.to_field.alias)]
 
         for prefix, table in join_tables:
             statement.fields += self.get_available_fields(table, prefix)
+
 
         for (alias_to_replace, replacement_alias) in to_replace:
 
@@ -442,11 +443,6 @@ class ApiSerializer(object):
 
             statement.fields[index_to_replace].alias = statement.fields[index_to_delete].alias
             del statement.fields[index_to_delete]
-        #
-        # print(json.dumps([
-        #     u"{} ({}.{})".format(field.alias, field.table.name, field.column.name)
-        #     for field in statement.fields
-        # ], indent=4))
 
         return statement
 
