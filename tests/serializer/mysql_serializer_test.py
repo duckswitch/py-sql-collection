@@ -49,7 +49,7 @@ def test_interpret_db_column(mysql_serializer):
         (u"id", u"varchar(50)", u"NO", u"", None, u"")
     )
     assert column.name == u"id"
-    assert column.type == u"string"
+    assert column.type == u"text"
     assert column.required is True
     assert column.key == u""
     assert column.default is None
