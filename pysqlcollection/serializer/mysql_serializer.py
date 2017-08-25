@@ -97,10 +97,8 @@ class MySQLSerializer(AbstractSQLSerializer):
                 field.table.alias, field.column.name, field.alias
             ) for field in select.fields]
 
-        table = u"{} {}".format(select.table.name, select.table.alias)
         joins = self.encode_joins(select.joins)
 
-        #
         # Construct filters
         where, where_values = self.encode_filters(select.filters, is_select=True)
         values += where_values
@@ -110,17 +108,18 @@ class MySQLSerializer(AbstractSQLSerializer):
             1: u"ASC",
             -1: u"DESC"
         }
-        sorts = u", ".join([u"`{}` {}".format(sort.field.alias, sort_bindings[sort.direction]) for sort in select.sorts])
-        sorts = u"ORDER BY {}".format(sorts) if len(sorts) > 0 else sorts
-        query = u"SELECT {} FROM {} {} ".format(u", ".join(fields), table, joins)
+
         limit_offset = u""
         if with_limit_and_skip:
             limit_offset = u"LIMIT %s OFFSET %s"
             values += [select.limit, select.offset]
 
+        sorts = u", ".join([u"`{}` {}".format(sort.field.alias, sort_bindings[sort.direction]) for sort in select.sorts])
+        sorts = u"ORDER BY {}".format(sorts) if len(sorts) > 0 else sorts
+        query = u"SELECT {} FROM (SELECT * FROM {} {}) {} {} ".format(u", ".join(fields), select.table.name, limit_offset, select.table.alias, joins)
+
         displayed = u", ".join([u"`{}`".format(field.alias) for field in select.fields if field.display])
-        #
-        query = u"SELECT {} FROM ({}) AS A0 {} {} {}".format(displayed, query, where, sorts, limit_offset)
+        query = u"SELECT {} FROM ({}) AS A0 {} {}".format(displayed, query, where, sorts)
         return query, values
 
     def get_relations(self, database_name, table_name):
