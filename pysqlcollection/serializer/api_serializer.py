@@ -403,7 +403,8 @@ class ApiSerializer(object):
                 to_table=to_table,
                 from_field=self.generate_field(from_table, field_name=look[u"localField"]),
                 to_field=self.generate_field(to_table, field_name=look[u"foreignField"]),
-                as_alias=look.get(u"as", look[u"from"])
+                as_alias=look.get(u"as", look[u"from"]),
+                type=look.get(u"type", u"simple")
             ))
 
         return joins
@@ -422,7 +423,8 @@ class ApiSerializer(object):
                 ] if table.alias not in table_aliases
             ]
 
-            to_replace += [(join.from_field.alias, join.to_field.alias)]
+            if join.type == u"simple":
+                to_replace += [(join.from_field.alias, join.to_field.alias)]
 
         for prefix, table in join_tables:
             statement.fields += self.get_available_fields(table, prefix)

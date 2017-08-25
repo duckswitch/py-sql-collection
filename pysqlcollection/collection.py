@@ -178,7 +178,7 @@ class Collection(object):
         lookup = self._proceed_lookup(lookup, auto_lookup)
         select = self._api_serializer.decode_find(self.table_name, query, projection, lookup)
 
-        return Cursor(self._sql_serializer, self._api_serializer, self._connection, select)
+        return Cursor(self._sql_serializer, self._api_serializer, self._connection, select, lookup)
 
     def insert_one(self, document, lookup=None, auto_lookup=0):
         """

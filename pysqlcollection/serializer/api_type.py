@@ -96,7 +96,7 @@ class Set(object):
 
 class Join(object):
 
-    def __init__(self, from_table, to_table, from_field, to_field, as_alias):
+    def __init__(self, from_table, to_table, from_field, to_field, as_alias, type=u"simple"):
         """
         Constructs the representation of a Join.
         Args:
@@ -105,12 +105,14 @@ class Join(object):
             from_field (Field): We join from this field.
             to_field (Field): We join to this field.
             as_alias (unicode): Alias to refer at field coming from joined table.
+            type (unicode): Can be simple or multiple.
         """
         self.from_table = from_table
         self.to_table = to_table
         self.from_field = from_field
         self.to_field = to_field
         self.as_alias = as_alias
+        self.type = type
 
     def __str__(self):
         return u"Join({} `{}` TO {} `{}` ON `{}`.{} = `{}`.{})".format(

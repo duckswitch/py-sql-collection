@@ -5,11 +5,9 @@ from pysqlcollection.client import Client
 
 client = Client(host=u"127.0.0.1", user=u"root", password=u"localroot1234")
 
+
+
 sql_collection_test = client.sql_collection_test
-
-hours_count = client.hours_count
-
-
 LOOKUP = [
   {
     "to": "task",
