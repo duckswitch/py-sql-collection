@@ -5,7 +5,14 @@ from pysqlcollection.client import Client
 
 client = Client(host=u"127.0.0.1", user=u"root", password=u"localroot1234")
 
-sql_collection_test = client.sql_collection_test
+db = client.sql_collection_test
+
+with db.transaction() as t:
+
+    db.country.insert_one({
+        u"id": 12,
+        u"name": u"lala"
+    }, in_transaction=t)
 
 LOOKUP = [
   {

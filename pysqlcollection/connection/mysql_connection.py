@@ -35,7 +35,8 @@ class MySQLConnection(AbstractConnection):
 
         return MySQLdb.connect(**kwargs)
 
-    def execute(self, query, values, return_lastrowid=False, return_rowcount=False):
+
+    def execute(self, query, values, return_lastrowid=False, return_rowcount=False, sql_cursor=None):
         """
         Execute a query.
         Args:
@@ -43,13 +44,17 @@ class MySQLConnection(AbstractConnection):
             values (list): The values to inject in the query.
             return_lastrowid (bool): Return the field last_rowid from cursor.
             return_rowcount (bool): Return the field rowcount from cursor.
+            sql_cursor: A sql cursor can be use to execute the request.
 
         Returns:
             (list, list): Tuple of two : resulting items & result set description.
         """
+        autocommit = False
         # Open connection
-        sql_connection = self.connect()
-        sql_cursor = sql_connection.cursor()
+        if not sql_cursor:
+            sql_cursor = self.connect().cursor()
+            autocommit = True
+
         # Execute query
         try:
             sql_cursor.execute(query, values)
@@ -58,13 +63,16 @@ class MySQLConnection(AbstractConnection):
 
         if return_lastrowid:
             result = sql_cursor.lastrowid
-            sql_cursor.connection.commit()
+
         elif return_rowcount:
             result = sql_cursor.rowcount
-            sql_cursor.connection.commit()
+
         else:
             result = list(sql_cursor.fetchall()), sql_cursor.description
 
-        sql_cursor.close()
-        sql_connection.close()
+        if autocommit and return_lastrowid or return_rowcount:
+            sql_cursor.connection.commit()
+            sql_cursor.connection.close()
+            sql_cursor.close()
+
         return result

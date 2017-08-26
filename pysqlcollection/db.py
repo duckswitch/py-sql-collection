@@ -4,7 +4,7 @@ This file contains DB class.
 """
 
 from .collection import Collection
-
+from .transaction import Transaction
 
 class DB(object):
     """
@@ -38,4 +38,13 @@ class DB(object):
                     table[0]
                 )
             )
+
+    def transaction(self):
+        """
+        Return a transaction context to execute queries in a transaction.
+        Returns:
+            (Transaction): The transaction object.
+        """
+        return Transaction(self._connection)
+
 
