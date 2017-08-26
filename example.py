@@ -5,12 +5,11 @@ from pysqlcollection.client import Client
 
 client = Client(host=u"127.0.0.1", user=u"root", password=u"localroot1234")
 
-db = client.sql_collection_test
+sql_collection_test = client.sql_collection_test
 
-with db.transaction() as t:
+with sql_collection_test.transaction() as t:
 
-    db.country.insert_one({
-        u"id": 12,
+    sql_collection_test.country.insert_one({
         u"name": u"lala"
     }, in_transaction=t)
 
