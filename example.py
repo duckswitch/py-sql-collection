@@ -6,8 +6,14 @@ from pysqlcollection.client import Client
 client = Client(host=u"127.0.0.1", user=u"root", password=u"localroot1234")
 
 
-
 sql_collection_test = client.sql_collection_test
+
+with sql_collection_test.transaction() as t:
+
+    sql_collection_test.country.insert_one({
+        u"name": u"lala"
+    }, in_transaction=t)
+
 LOOKUP = [
   {
     "to": "task",

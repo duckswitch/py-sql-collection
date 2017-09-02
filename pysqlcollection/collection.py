@@ -180,7 +180,7 @@ class Collection(object):
 
         return Cursor(self._sql_serializer, self._api_serializer, self._connection, select, lookup)
 
-    def insert_one(self, document, lookup=None, auto_lookup=0):
+    def insert_one(self, document, lookup=None, auto_lookup=0, in_transaction=None):
         """
         Inserts a document in the collection.
         Args:
@@ -189,6 +189,7 @@ class Collection(object):
             auto_lookup (int): If we don't know what lookup we want, we let the lib to look
                 them for us. This can have consequences on optimization as it constructs
                 joins. Be careful.
+            in_transaction (Transaction): The transaction where to execute the query.
         Return:
             (InsertResultOne): The representation of a insertion.
         """
@@ -197,11 +198,18 @@ class Collection(object):
         insert = self._api_serializer.decode_insert_one(self.table_name, document, lookup)
         query, values = self._sql_serializer.encode_insert(insert)
 
+        sql_cursor = in_transaction.sql_cursor if in_transaction else None
+
         return InsertResultOne(
-            inserted_id=self._connection.execute(query, values, return_lastrowid=True)
+            inserted_id=self._connection.execute(
+                query,
+                values,
+                return_lastrowid=True,
+                sql_cursor=sql_cursor
+            )
         )
 
-    def update_many(self, query, update, options=None, lookup=None, auto_lookup=0):
+    def update_many(self, query, update, options=None, lookup=None, auto_lookup=0, in_transaction=None):
         """
         Updates many documents regarding the query / update passed in parameter.
         Args:
@@ -212,16 +220,21 @@ class Collection(object):
             auto_lookup (int): If we don't know what lookup we want, we let the lib to look
                 them for us. This can have consequences on optimization as it constructs
                 joins. Be careful.
+            in_transaction (Transaction): The transaction where to execute the query.
         """
         lookup = self._proceed_lookup(lookup, auto_lookup)
         update = self._api_serializer.decode_update_many(
             self.table_name, query, update, options, lookup
         )
         query, values = self._sql_serializer.encode_update_many(update)
-        updated_row_id = self._connection.execute(query, values, return_rowcount=True)
+
+        sql_cursor = in_transaction.sql_cursor if in_transaction else None
+
+        updated_row_id = self._connection.execute(query, values, return_rowcount=True, sql_cursor=sql_cursor)
+
         return UpdateResult(matched_count=updated_row_id, modified_count=updated_row_id)
 
-    def delete_many(self, query, lookup=None, auto_lookup=0):
+    def delete_many(self, query, lookup=None, auto_lookup=0, in_transaction=None):
         """
         Deletes all document matching the filter.
         Args:
@@ -230,12 +243,17 @@ class Collection(object):
             auto_lookup (int): If we don't know what lookup we want, we let the lib to look
                 them for us. This can have consequences on optimization as it constructs
                 joins. Be careful.
+            in_transaction (Transaction): The transaction where to execute the query.
         """
         lookup = self._proceed_lookup(lookup, auto_lookup)
         delete = self._api_serializer.decode_delete_many(
             self.table_name, query=query, lookup=lookup
         )
+
         query, values = self._sql_serializer.encode_delete_many(delete)
+
+        sql_cursor = in_transaction.sql_cursor if in_transaction else None
+
         return DeleteResult(
-            deleted_count=self._connection.execute(query, values, return_rowcount=True)
+            deleted_count=self._connection.execute(query, values, return_rowcount=True, sql_cursor=sql_cursor)
         )
