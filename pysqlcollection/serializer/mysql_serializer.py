@@ -109,7 +109,7 @@ class MySQLSerializer(AbstractSQLSerializer):
             -1: u"DESC"
         }
 
-         limit_offset = u""
+        limit_offset = u""
         if with_limit_and_skip:
             limit_offset = u"LIMIT %s OFFSET %s"
             values += [select.limit, select.offset]
