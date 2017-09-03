@@ -163,7 +163,7 @@ class Cursor(object):
         if isinstance(self.statement, Select):
             query, values = self._sql_serializer.encode_select(self.statement)
             rows, description = self._connection.execute(query, values)
-            self._items = self.deduplication(items=[self.to_json(row, description) for row in rows])
+            self._items = self._items = [self.to_json(row, description) for row in rows] # self.deduplication(items=[self.to_json(row, description) for row in rows])
         self._executed = True
 
     def json_set(self, item, path, value):
