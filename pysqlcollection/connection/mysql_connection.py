@@ -4,10 +4,14 @@ Implement MySQL Connection.
 """
 
 import MySQLdb
+import decimal
 from MySQLdb import IntegrityError
+from MySQLdb.constants import FIELD_TYPE
+from MySQLdb.converters import conversions
 from .sql_exception import IntegrityException
 from .abstract_connection import AbstractConnection
 
+conversions[FIELD_TYPE.DECIMAL] = conversions[FIELD_TYPE.NEWDECIMAL] = decimal.Decimal
 
 class MySQLConnection(AbstractConnection):
     """
