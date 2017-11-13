@@ -36,7 +36,12 @@ class Client(object):
         return self.__dict__[name]
             
     def discover_databases(self, database_name=None):
+        """
+        Discover table & views into database.
+        Args:
+            database_name (unicode): The name of the database to discover.
 
+        """
         if self._driver == u"mysql":
             connection_chain = {
                 u"host": self._host,

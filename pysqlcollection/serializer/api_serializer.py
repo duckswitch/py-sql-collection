@@ -26,6 +26,9 @@ from .api_exception import (
     BadRequest
 )
 
+from pysqlcollection.utils import json_to_one_level
+
+
 class ApiSerializer(object):
     """
     Defines the MongoDB Api serializer.
@@ -76,13 +79,13 @@ class ApiSerializer(object):
             key_or_list = [(key_or_list, direction)]
 
         field_names = [field.alias for field in statement.fields]
-        
+
         sorts = []
         for key, direction in key_or_list:
             if direction not in [1, -1]:
                 raise WrongParameter(u"You can only sort direction with '1' (ASC) or '-1' (DESC).")
 
-            if key in field_names:            
+            if key in field_names:
                 sorts.append(
                     Sort(
                         field=statement.fields[field_names.index(key)],
@@ -91,7 +94,7 @@ class ApiSerializer(object):
                 )
             else:
                 raise WrongParameter(u"Field '{}' can't be sorted because it doesn't exist.".format(key))
-          
+
         statement.sorts = sorts
         return statement
 
@@ -123,7 +126,7 @@ class ApiSerializer(object):
         Returns:
             (Table): The generated table.
         """
-        
+
         return Table(
             name=table_name,
             alias=alias or table_name,
@@ -163,7 +166,6 @@ class ApiSerializer(object):
                     table=table
                 )
 
-
     def get_available_fields(self, table, prefix=None, to_ignore=None):
         """
         Get a table, and look for all available fields inside.
@@ -190,7 +192,6 @@ class ApiSerializer(object):
 
         return fields
 
-
     def decode_projection(self, fields, projection):
         mode = None
         for key, value in projection.items():
@@ -207,10 +208,6 @@ class ApiSerializer(object):
                     fields[index].display = False
 
         return fields
-
-
-
-
 
     def decode_find(self, table, query=None, projection=None, lookup=None):
         """
@@ -242,7 +239,7 @@ class ApiSerializer(object):
 
     def decode_insert_one(self, table_name, document, lookup=None):
         lookup = lookup or []
-        document = self.json_to_one_level(document)
+        document = json_to_one_level(document)
         insert = Insert(
             table=self.generate_table(table_name=table_name, is_root_table=True)
         )
@@ -264,7 +261,6 @@ class ApiSerializer(object):
             for key, value in document.items():
 
                 if key == column.name:
-
                     insert.fields.append(Field(insert.table, column))
                     insert.values.append(self.cast_value(column.type, value))
                     found = True
@@ -326,7 +322,7 @@ class ApiSerializer(object):
         sets = []
         for key in update:
             if key == u"$set":
-                update[key] = self.json_to_one_level(update[key])
+                update[key] = json_to_one_level(update[key])
                 for key, value in update[key].items():
                     if key in field_names:
                         field = fields[field_names.index(key)]
@@ -351,7 +347,6 @@ class ApiSerializer(object):
         if len(update_stmt.filters.filters) == 0:
             raise BadRequest(u"You need to supply at least one filter.")
 
-
         return update_stmt
 
     def _merge_fields(self, fields, to_merge):
@@ -361,7 +356,6 @@ class ApiSerializer(object):
             for index, field_to_merge in enumerate(to_merge):
 
                 if field_to_merge.alias.startswith(field.alias):
-
                     output.append(to_merge[index])
                     del to_merge[index]
                     merged = True
@@ -429,7 +423,6 @@ class ApiSerializer(object):
         for prefix, table in join_tables:
             statement.fields += self.get_available_fields(table, prefix)
 
-
         for (alias_to_replace, replacement_alias) in to_replace:
 
             index_to_replace = None
@@ -462,35 +455,3 @@ class ApiSerializer(object):
 
         return delete_stmt
 
-    def json_to_one_level(self, obj, parent=None):
-        """
-        Take a dict and update all the path to be on one level.
-        Arguments:
-            output (dict): The dict to proceed.
-            parent (unicode): The parent key. Used only with recursion.
-        Return:
-            dict: The updated obj.
-        """
-
-        output = {}
-        for key, value in obj.items():
-            if isinstance(value, dict):
-                if parent is None:
-                    output.update(self.json_to_one_level(value, key))
-                else:
-                    output.update(self.json_to_one_level(value, u".".join([parent, key])))
-            elif isinstance(value, list):
-                for index, item in enumerate(value):
-                    item = {
-                        unicode(index): item
-                    }
-                    if parent is None:
-                        output.update(self.json_to_one_level(item, u".".join([key])))
-                    else:
-                        output.update(self.json_to_one_level(item, u".".join([parent, key])))
-            else:
-                if parent is not None:
-                    output[u".".join([parent, key])] = value
-                else:
-                    output[key] = value
-        return output

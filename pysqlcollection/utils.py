@@ -41,3 +41,37 @@ def json_get(item, path, default=None):
         return item[tab[0]]
 
     return default
+
+
+def json_to_one_level(obj, parent=None):
+    """
+    Take a dict and update all the path to be on one level.
+    Arguments:
+        output (dict): The dict to proceed.
+        parent (unicode): The parent key. Used only with recursion.
+    Return:
+        dict: The updated obj.
+    """
+
+    output = {}
+    for key, value in obj.items():
+        if isinstance(value, dict):
+            if parent is None:
+                output.update(json_to_one_level(value, key))
+            else:
+                output.update(json_to_one_level(value, u".".join([parent, key])))
+        elif isinstance(value, list):
+            for index, item in enumerate(value):
+                item = {
+                    unicode(index): item
+                }
+                if parent is None:
+                    output.update(json_to_one_level(item, u".".join([key])))
+                else:
+                    output.update(json_to_one_level(item, u".".join([parent, key])))
+        else:
+            if parent is not None:
+                output[u".".join([parent, key])] = value
+            else:
+                output[key] = value
+    return output

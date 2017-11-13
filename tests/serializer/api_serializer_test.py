@@ -7,6 +7,7 @@ import pytest
 import json
 from pytest import fixture
 from collections import OrderedDict
+from mock import Mock
 from pysqlcollection.serializer.api_serializer import ApiSerializer
 from pysqlcollection.serializer.api_type import (
     Select,
@@ -18,7 +19,8 @@ from pysqlcollection.serializer.api_type import (
     Or
 )
 from pysqlcollection.serializer.api_exception import (
-    WrongParameter
+    WrongParameter,
+    MissingField
 )
 
 
@@ -287,3 +289,64 @@ def test_decode_query_and(api_serializer, project_fields):
     assert client_id_gte.operator.value == u">="
     assert client_id_gte.field.alias == u"client.id"
     assert client_id_gte.value == 12
+
+
+def test_decode_find(api_serializer, project_fields):
+    def dummy_decode_joins(select, lookup):
+        return select
+
+    table = Table(u"project")
+    api_serializer.generate_table = Mock(returned_value=table)
+    api_serializer.get_available_fields = Mock(returned_value=project_fields)
+    api_serializer._decode_joins = Mock(side_effect=dummy_decode_joins)
+    api_serializer.decode_projection = Mock()
+    api_serializer.decode_query = Mock()
+
+    result = api_serializer.decode_find(table, {
+        u"name": u"test"
+    }, {
+        u"name": 1
+    }, [])
+    assert isinstance(result, Select)
+    api_serializer.generate_table.assert_called_with(table_name=table, is_root_table=True)
+    api_serializer.generate_table.get_available_fields(table)
+    api_serializer._decode_joins.assert_called_once()
+    api_serializer.decode_projection.assert_called_once()
+    api_serializer.decode_query.assert_called_once()
+
+
+def test_decode_insert_one(api_serializer, project_fields):
+    insert = api_serializer.decode_insert_one(u"project", OrderedDict([
+        (u"id", 1),
+        (u"name", u"test"),
+        (u"client", OrderedDict([
+            (u"id", 2)
+        ]))
+    ]), lookup=[
+        {
+            u"from": u"client",
+            u"to": u"project",
+            u"localField": u"client_id",
+            u"foreignField": u"id",
+            u"as": u"client"
+        }
+    ])
+
+    assert insert.table.name == u"project"
+    assert insert.table.is_root_table == True
+    assert [field.column.name for field in insert.fields] == [u"id", u"name", u"client_id"]
+    assert [value for value in insert.values] == [1, u"test", 2]
+
+
+def test_decode_insert_one_field_not_found(api_serializer):
+    with pytest.raises(MissingField):
+        api_serializer.decode_insert_one(u"project", OrderedDict([
+            (u"id", 1),
+            (u"dumb", u"test"),
+            (u"client", OrderedDict([
+                (u"id", 2)
+            ]))
+        ]))
+
+def test_decode_update_set(api_serializer, project_fields):
+    pass

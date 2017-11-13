@@ -13,6 +13,7 @@ from .abstract_connection import AbstractConnection
 
 conversions[FIELD_TYPE.DECIMAL] = conversions[FIELD_TYPE.NEWDECIMAL] = decimal.Decimal
 
+
 class MySQLConnection(AbstractConnection):
     """
     Implements low level interactions with MySQL.
@@ -38,7 +39,6 @@ class MySQLConnection(AbstractConnection):
             kwargs[u"db"] = self._database
 
         return MySQLdb.connect(**kwargs)
-
 
     def execute(self, query, values, return_lastrowid=False, return_rowcount=False, sql_cursor=None):
         """
