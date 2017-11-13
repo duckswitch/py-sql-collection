@@ -29,6 +29,7 @@ def client_table_columns():
         Column(name=u"name", typ=u"string", required=True, key=u"", extra=u"", default=None)
     ]
 
+
 @fixture(scope=u"function")
 def project_table_columns():
     return [
@@ -43,12 +44,14 @@ def project_table_columns():
         Column(name=u"client_id", typ=u"number", required=True, key=u"mul", extra=u"", default=None)
     ]
 
+
 @fixture(scope=u"function")
 def dummy_table_columns(client_table_columns, project_table_columns):
     return {
         u"client": client_table_columns,
         u"project": project_table_columns
     }
+
 
 @fixture(scope=u"function")
 def api_serializer(dummy_table_columns):
@@ -59,6 +62,7 @@ def api_serializer(dummy_table_columns):
     api_serializer.table_columns = dummy_table_columns
     return api_serializer
 
+
 @fixture(scope=u"function")
 def client_table(api_serializer):
     return Table(
@@ -67,6 +71,7 @@ def client_table(api_serializer):
         columns=api_serializer.table_columns[u"client"],
         is_root_table=True
     )
+
 
 @fixture(scope=u"function")
 def dummy_select(client_table, client_table_columns):
@@ -84,6 +89,7 @@ def dummy_select(client_table, client_table_columns):
         ]
     )
 
+
 def test_decode_limit(api_serializer, dummy_select):
     """
     Test for simple parameters.
@@ -95,6 +101,7 @@ def test_decode_limit(api_serializer, dummy_select):
         api_serializer.decode_limit(dummy_select, -12)
 
     assert exec_info.value.api_error_code == u"WRONG_PARAMETER"
+
 
 def test_decode_skip(api_serializer, dummy_select):
     """
@@ -108,6 +115,7 @@ def test_decode_skip(api_serializer, dummy_select):
 
     assert exec_info.value.api_error_code == u"WRONG_PARAMETER"
 
+
 def test_decode_sort(api_serializer, dummy_select):
     """
     Test for simple parameters.
@@ -116,6 +124,7 @@ def test_decode_sort(api_serializer, dummy_select):
     assert len(select.sorts) == 1
     assert select.sorts[0].field.alias == u"name"
     assert select.sorts[0].direction == 1
+
 
 def test_generate_table(api_serializer):
     """
@@ -130,6 +139,7 @@ def test_generate_table(api_serializer):
     assert len(table.columns) == 2
     assert table.alias == u"DummyAlias"
     assert table.is_root_table
+
 
 def test_generate_field(api_serializer, client_table):
     """
@@ -152,6 +162,7 @@ def test_generate_field(api_serializer, client_table):
     field = api_serializer.generate_field(*args)
     assert field.alias == u"client.name"
 
+
 def test_get_available_fields(api_serializer, client_table):
     """
     Test simple working of get_available_fields.
@@ -170,6 +181,7 @@ def test_get_available_fields(api_serializer, client_table):
     assert len(fields) == 1
     assert fields[0].column == client_table.columns[1]
 
+
 @fixture(scope=u"function")
 def project_fields(api_serializer):
     """
@@ -183,6 +195,7 @@ def project_fields(api_serializer):
         api_serializer.get_available_fields(project_table) +
         api_serializer.get_available_fields(client_table, prefix=u"client")
     )
+
 
 def test_decode_query_equal(api_serializer, project_fields):
     """
@@ -232,6 +245,7 @@ def test_decode_query_custom_op(api_serializer, project_fields):
     assert lte.operator.value == u"<="
     assert lte.field.alias == u"client.id"
     assert lte.value == 12
+
 
 def test_decode_query_and(api_serializer, project_fields):
     """
