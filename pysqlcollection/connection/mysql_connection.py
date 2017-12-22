@@ -11,7 +11,7 @@ from MySQLdb.converters import conversions
 from .sql_exception import IntegrityException
 from .abstract_connection import AbstractConnection
 
-conversions[FIELD_TYPE.DECIMAL] = conversions[FIELD_TYPE.NEWDECIMAL] = decimal.Decimal
+conversions[FIELD_TYPE.NEWDECIMAL] = decimal.Decimal
 
 class MySQLConnection(AbstractConnection):
     """
@@ -39,6 +39,25 @@ class MySQLConnection(AbstractConnection):
 
         return MySQLdb.connect(**kwargs)
 
+    def to_python_types(self, rows):
+        """
+        Convert SQL database types coming into Python types.
+        Args:
+            rows (list of tuples): The request return.
+
+        Returns:
+            (list of tuples): The rows parameter converted into python types.
+        """
+        for line_index, row in enumerate(rows):
+            temp = []
+            for cell in rows[line_index]:
+                if type(cell) is decimal.Decimal:
+                    temp.append(float(cell))
+                else:
+                    temp.append(cell)
+            
+            rows[line_index] = tuple(temp)
+        return rows
 
     def execute(self, query, values, return_lastrowid=False, return_rowcount=False, sql_cursor=None):
         """
@@ -72,7 +91,8 @@ class MySQLConnection(AbstractConnection):
             result = sql_cursor.rowcount
 
         else:
-            result = list(sql_cursor.fetchall()), sql_cursor.description
+
+            result = self.to_python_types(list(sql_cursor.fetchall())), sql_cursor.description
 
         if autocommit and return_lastrowid or return_rowcount:
             sql_cursor.connection.commit()
